@@ -13,6 +13,7 @@ from more_itertools.more import unzip
 
 def load_midi_v2(fname):
 
+    print(fname)
     p = pm.PrettyMIDI(fname)
     cache_path = os.path.join(CACHE_DIR, fname + '.npy')
     os.makedirs(os.path.dirname(cache_path), exist_ok=True)
@@ -48,8 +49,8 @@ def midi_decode_v2(p):
     #   pauses between consecutive notes are captured)
     piano_rolls = [] # [[instrument, t_play, t_volume]]
     for instrument in instruments.values():
-        print(pm.program_to_instrument_name(instrument.program), instrument.is_drum,
-              instrument.get_piano_roll(FS).shape)
+        # print(pm.program_to_instrument_name(instrument.program), instrument.is_drum,
+        #       instrument.get_piano_roll(FS).shape)
         if instrument.is_drum:
             piano_rolls.append([instrument, compute_drum_piano_roll(instrument, instrument.get_piano_roll(FS), FS)])
         else:
@@ -78,7 +79,10 @@ def midi_decode_v2(p):
     # drum_roll_play = np.zeros((pitches, max_time_steps))
     # drum_roll_volume = np.zeros((pitches, max_time_steps))
     final = np.zeros((max_time_steps, (NUM_INSTRUMENTS + 1) * pitches, 2)) # + drum dimension
-    max_drum_notes = sorted([len(instrument.notes) for instrument in p.instruments if instrument.is_drum], reverse=True)[0]
+    drums_sorted = sorted([len(instrument.notes) for instrument in p.instruments if instrument.is_drum], reverse=True)
+    max_drum_notes = None
+    if len(drums_sorted) > 0:
+        max_drum_notes = drums_sorted[0]
     for piano_roll in piano_rolls:
         instrument = piano_roll[0]
         t_play = piano_roll[1]

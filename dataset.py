@@ -105,8 +105,11 @@ def unclamp_midi(sequence):
 
 if __name__ == "__main__":
     data = load_all(styles, BATCH_SIZE, SEQ_LEN)
+    print(data[0][3][1, 60, :])
     print(data[0][3].shape)
     print(data[0][0].shape)
+
+    print(np.arange(0, 24 - 24 % BATCH_SIZE, BATCH_SIZE))
     # piece = pm.PrettyMIDI("out/test_in.mid")
     # beats, decoded = midi_decode_v2(piece)
     # print(beats[1], decoded.shape)
