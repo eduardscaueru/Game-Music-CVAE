@@ -56,6 +56,7 @@ def train(latent_dim, epochs, dataset):
         for start_batch in np.arange(0, num_seqs - num_seqs % BATCH_SIZE, BATCH_SIZE):
             with tf.GradientTape() as tape:
                 seqs = note_data[start_batch:start_batch + BATCH_SIZE, :, :, 0]
+                target_seqs = note_target[start_batch:start_batch + BATCH_SIZE, :, :, 0]
                 style_labels = style_data[start_batch:start_batch + BATCH_SIZE, 1, :]
 
                 # forward pass
@@ -64,7 +65,7 @@ def train(latent_dim, epochs, dataset):
                     print(decoded_seqs[0, 0, :])
 
                 # compute loss
-                bce, kl = elbo(z_mu, z_rho, decoded_seqs, seqs)
+                bce, kl = elbo(z_mu, z_rho, decoded_seqs, target_seqs)
                 loss = bce + BETA * kl
 
                 gradients = tape.gradient(loss, cvae.variables)

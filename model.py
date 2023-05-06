@@ -69,3 +69,7 @@ if __name__ == "__main__":
     model = CVAE(LATENT_DIM)
     model(tf.random.normal((BATCH_SIZE, SEQ_LEN, NUM_NOTES)), tf.zeros((BATCH_SIZE, NUM_STYLES)))
     model.summary()
+    print(model.decoder_block.output.shape[1])
+    print(ENCODER_UNITS)
+    ENCODER_UNITS = 256
+    print(ENCODER_UNITS)

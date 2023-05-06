@@ -33,6 +33,46 @@ def compute_drum_piano_roll(instrument, piano_roll, fs):
     return roll
 
 
+def midi_encode_v2(piano_roll, program=16):
+
+    piano_roll = piano_roll[:, :, 1].T
+
+    notes, frames = piano_roll.shape
+    encoded = pm.PrettyMIDI()
+    instrument = pm.Instrument(program=program)
+
+    # pad 1 column of zeros so we can acknowledge initial and ending events
+    piano_roll = np.pad(piano_roll, [(0, 0), (1, 1)], 'constant')
+
+    # use changes in velocities to find note on / note off events
+    velocity_changes = np.nonzero(np.diff(piano_roll).T)
+
+    # keep track on velocities and note on times
+    prev_velocities = np.zeros(notes, dtype=int)
+    note_on_time = np.zeros(notes)
+
+    for time, note in zip(*velocity_changes):
+        # use time + 1 because of padding above
+        velocity = int(piano_roll[note, time + 1] * MAX_VELOCITY)
+        time = time / FS
+        if velocity > 0:
+            if prev_velocities[note] == 0:
+                note_on_time[note] = time
+                prev_velocities[note] = velocity
+                print(velocity)
+        else:
+            pm_note = pm.Note(
+                velocity=prev_velocities[note],
+                pitch=note,
+                start=note_on_time[note],
+                end=time)
+            instrument.notes.append(pm_note)
+            prev_velocities[note] = 0
+    encoded.instruments.append(instrument)
+
+    return encoded
+
+
 def midi_decode_v2(p):
 
     # Compute piano rolls for every instrument
