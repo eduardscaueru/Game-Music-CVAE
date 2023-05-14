@@ -3,8 +3,8 @@ import os
 # Define the musical styles
 genre = [
     # 'action',
-    # 'adventure',
-    'arcade'
+    'adventure'
+    # 'arcade',
     # 'horror'
 ]
 
@@ -13,16 +13,16 @@ styles = [
     #     'data/action/batman',
     #     'data/action/doom'
     # ],
-    # [
-    #     'data/adventure/blade_runner',
-    #     'data/adventure/indiana_jones',
-    #     'data/adventure/myst'
-    # ],
     [
+        'data/adventure/blade_runner'
+        # 'data/adventure/indiana_jones',
+        # 'data/adventure/myst'
+    ]
+    # [
         # 'data/arcade/blox',
         # 'data/arcade/burning_monkey',
-        'data/arcade/mario'
-    ]
+        # 'data/arcade/mario'
+    # ]
     # [
     #     'data/horror/blood',
     #     'data/horror/house_of_the_dead'
@@ -31,9 +31,9 @@ styles = [
 
 NUM_STYLES = sum(len(s) for s in styles)
 
-NUM_INSTRUMENTS = 36
+NUM_INSTRUMENTS = 1
 MAX_INSTRUMENTS_PER_SONG = 5
-FS = 5.25
+FS = 50
 
 # MIDI Resolution
 DEFAULT_RES = 96
@@ -45,9 +45,9 @@ NUM_OCTAVES = 4
 OCTAVE = 8
 
 # Min and max note (in MIDI note number)
-MIN_NOTE = 36
+MIN_NOTE = 0
 # MAX_NOTE = MIN_NOTE + NUM_OCTAVES * OCTAVE
-MAX_NOTE = 70
+MAX_NOTE = 127
 NUM_NOTES_INSTRUMENT = MAX_NOTE - MIN_NOTE
 NUM_NOTES = (NUM_INSTRUMENTS + 1) * NUM_NOTES_INSTRUMENT
 
@@ -57,12 +57,12 @@ BEATS_PER_BAR = 4
 NOTES_PER_BEAT = 4
 # The quickest note is a half-note
 # NOTES_PER_BAR = NOTES_PER_BEAT * BEATS_PER_BAR
-NOTE_TIME_STEPS = 1
+NOTE_TIME_STEPS = 5  # 12
 NOTES_PER_BAR = NOTES_PER_BEAT * BEATS_PER_BAR * NOTE_TIME_STEPS
 
 # Training parameters
-BARS = 4
-BATCH_SIZE = 16
+BARS = 1
+BATCH_SIZE = 2
 SEQ_LEN = BARS * NOTES_PER_BAR
 
 # Hyper Parameters
@@ -71,9 +71,9 @@ STYLE_UNITS = 64
 NOTE_UNITS = 2
 
 ENCODER_UNITS = 128
-LATENT_DIM = 15
+LATENT_DIM = 5
 BETA = 1
-EPOCHS = 1000
+EPOCHS = 300
 
 # Move file save location
 OUT_DIR = 'out'

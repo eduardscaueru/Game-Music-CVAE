@@ -39,7 +39,10 @@ def midi_encode_v2(piano_roll, program=16):
 
     notes, frames = piano_roll.shape
     encoded = pm.PrettyMIDI()
-    instrument = pm.Instrument(program=program)
+    if program == -1:
+        instrument = pm.Instrument(program=0, is_drum=True)
+    else:
+        instrument = pm.Instrument(program=program)
 
     # pad 1 column of zeros so we can acknowledge initial and ending events
     piano_roll = np.pad(piano_roll, [(0, 0), (1, 1)], 'constant')
@@ -59,7 +62,6 @@ def midi_encode_v2(piano_roll, program=16):
             if prev_velocities[note] == 0:
                 note_on_time[note] = time
                 prev_velocities[note] = velocity
-                print(velocity)
         else:
             pm_note = pm.Note(
                 velocity=prev_velocities[note],
@@ -216,37 +218,38 @@ def delete_same_files(dir_name):
 
 def limit_instruments():
     instrument_freq = {}
-    for root, dirs, files in os.walk("./data", topdown=False):
-        for name in files:
-            midi_file_name = os.path.join(root, name)
-            song = pm.PrettyMIDI(midi_file_name)
-            sorted_instruments_by_notes = sorted([(len(x.notes), x.program) for x in song.instruments],
-                                                 key=lambda x: x[0], reverse=True)[:MAX_INSTRUMENTS_PER_SONG]
-            _, programs = unzip(sorted_instruments_by_notes)
-            for program in programs:
-                if program not in instrument_freq:
-                    instrument_freq[program] = 1
+    for style_folders in styles:
+        for style_folder in style_folders:
+            for root, dirs, files in os.walk(style_folder, topdown=False):
+                for name in files:
+                    midi_file_name = os.path.join(root, name)
+                    song = pm.PrettyMIDI(midi_file_name)
+                    sorted_instruments_by_notes = sorted([(len(x.notes), x.program) for x in song.instruments if not x.is_drum],
+                                                         key=lambda x: x[0], reverse=True)[:MAX_INSTRUMENTS_PER_SONG]
+                    _, programs = unzip(sorted_instruments_by_notes)
+                    for program in programs:
+                        if program not in instrument_freq:
+                            instrument_freq[program] = 1
 
     # print(instrument_freq)
     # print(sorted(list(instrument_freq.items()), key=lambda x: x[1], reverse=True))
     programs = list(instrument_freq.keys())
     program_to_idx = list(zip(programs, np.arange(len(programs))))
     program_to_idx.append((-1, len(program_to_idx)))
-    # print(dict(program_to_idx))
-    print("NUM_INSTRUMENTS={}".format(len(program_to_idx) - 1))
+    print("NUM_INSTRUMENTS must be {}".format(len(program_to_idx) - 1))
 
     return dict(program_to_idx)
 
 
 instrument_to_idx = limit_instruments()
-
+idx_to_instrument = {v: k for k, v in instrument_to_idx.items()}
 
 if __name__ == '__main__':
     # Test
     # pp = mido.MidiFile("out/test_in.mid")
     # midi_decode_v1(pp)
     print("INTRUMENT to IDX:", instrument_to_idx)
-    piece = pm.PrettyMIDI("out/test_in.mid")
+    piece = pm.PrettyMIDI("data/arcade/mario/Koopa_Bros._Theme.mid")
     beats, decoded = midi_decode_v2(piece)
     print(beats[1], decoded.shape)
     # print(decoded[32, 43 * 128:(43 + 1) * 128, 1])

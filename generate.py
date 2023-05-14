@@ -22,4 +22,41 @@ if __name__ == "__main__":
     generated = generate_song(model, 2, label)
     print(np.max(generated))
     print(len(generated[generated > 0.1]))
-    print(generate_song(model, 2, label).shape)
+    print(generated.shape)
+
+    t = 0
+    final = np.zeros((NUM_INSTRUMENTS + 1, generated.shape[0] * generated.shape[1], NUM_NOTES_INSTRUMENT, NOTE_UNITS))
+    instrument_max_probs = {i: 0 for i in range(NUM_INSTRUMENTS + 1)}
+    print(final.shape)
+    for bars in range(generated.shape[0]):
+        for time_step in range(generated.shape[1]):
+            for i in range(NUM_INSTRUMENTS + 1):
+                instrument_seq = generated[bars, time_step, i * NUM_NOTES_INSTRUMENT:(i + 1) * NUM_NOTES_INSTRUMENT]
+                selected_note_idx = np.argmax(instrument_seq)
+                max_prob = np.max(instrument_seq)
+
+                instrument_max_probs[i] += max_prob
+
+                final[i, t, selected_note_idx, 1] = 1
+            t += 1
+
+    final.tofile('out/generated.dat')
+
+    sorted_instruments = sorted(instrument_max_probs.items(), key=lambda x: x[1], reverse=True)
+    print(sorted_instruments)
+    selected_instruments = [(idx_to_instrument[x[0]], final[x[0], :, :, :]) for x in sorted_instruments] #sorted_instruments[:4]
+
+    # selected_instruments = []
+    # for instrument_idx in range(NUM_INSTRUMENTS + 1):
+    #     if np.sum(final[instrument_idx, :, :, 1]) > 0:
+    #         print(instrument_idx, idx_to_instrument[instrument_idx])
+    #         selected_instruments.append((idx_to_instrument[instrument_idx], final[instrument_idx, :, :, :]))
+
+    pm_song = pm.PrettyMIDI()
+    for program, piano_roll in selected_instruments:
+        encoded = midi_encode_v2(piano_roll, program=program)
+        pm_song.instruments.append(encoded.instruments[0])
+
+    f = open("out/generated_test.mid", "w")
+    f.close()
+    pm_song.write("out/generated_test.mid")

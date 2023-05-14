@@ -67,14 +67,25 @@ def load_all(styles, batch_size, time_steps):
                 seq = clamp_midi(seq)
                 # Create training data and labels
                 train_data, label_data = stagger(seq, time_steps)
+
+                # x = np.asarray(train_data)
+                # x = x[:, :, :, 0]
+                # skip = False
+                # x = x.flatten()
+                # for xx in x:
+                #     if 0 < xx < 1:
+                #         skip = True
+                #         break
+
+                # if not skip:
                 note_data += train_data
                 note_target += label_data
 
                 beats = [compute_beat(i, NOTES_PER_BAR) for i in range(len(seq))]
                 beat_data += stagger(beats, time_steps)[0]
-                # print(np.asarray(beats).shape)
 
-                style_data += stagger([style_hot for i in range(len(seq))], time_steps)[0]
+                # style_data += stagger([style_hot for i in range(len(seq))], time_steps)[0]
+                style_data += np.tile(np.asarray(style_hot), (np.array(train_data).shape[0], time_steps, 1)).tolist()
 
     note_data = np.array(note_data)
     beat_data = np.array(beat_data)
@@ -105,11 +116,11 @@ def unclamp_midi(sequence):
 
 if __name__ == "__main__":
     data = load_all(styles, BATCH_SIZE, SEQ_LEN)
-    print(data[0][3][1, 60, :])
+    print(data[0][3][0, 60, :])
     print(data[0][3].shape)
     print(data[0][0].shape)
 
-    print(np.arange(0, 24 - 24 % BATCH_SIZE, BATCH_SIZE))
+    # print(np.arange(0, 24 - 24 % BATCH_SIZE, BATCH_SIZE))
     # piece = pm.PrettyMIDI("out/test_in.mid")
     # beats, decoded = midi_decode_v2(piece)
     # print(beats[1], decoded.shape)

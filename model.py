@@ -2,7 +2,7 @@ import tensorflow as tf
 from tensorflow import keras
 import numpy as np
 from constants import *
-from keras.layers import LSTM, Dense, TimeDistributed, InputLayer, Lambda, RepeatVector
+from keras.layers import LSTM, Dense, TimeDistributed, InputLayer, Lambda, RepeatVector, Bidirectional
 
 
 def sampling(z_mean, z_std):
@@ -14,7 +14,7 @@ def sampling(z_mean, z_std):
 def get_encoder():
     # Embedding layer pentru a reduce dim NUM_NOTES
     inputs = tf.keras.Input(shape=(SEQ_LEN, NUM_NOTES), batch_size=BATCH_SIZE)
-    lstm_output = LSTM(ENCODER_UNITS)(inputs)
+    lstm_output = LSTM(ENCODER_UNITS, activation="sigmoid")(inputs)
 
     return keras.Model(inputs=inputs, outputs=[lstm_output])
 
@@ -30,7 +30,7 @@ def get_latent(latent_dim):
 def get_decoder(latent_dim):
     inputs = tf.keras.Input(shape=(latent_dim + NUM_STYLES,), batch_size=BATCH_SIZE)
     repeated_inputs = RepeatVector(SEQ_LEN)(inputs)
-    lstm_outputs = LSTM(NUM_NOTES, return_sequences=True, activation="sigmoid")(repeated_inputs)
+    lstm_outputs = LSTM(NUM_NOTES, return_sequences=True, activation="sigmoid", recurrent_dropout=0.2)(repeated_inputs)
     # Dense layer pentru a creste dim la NUM_NOTES
 
     return keras.Model(inputs=inputs, outputs=[lstm_outputs])
@@ -70,6 +70,3 @@ if __name__ == "__main__":
     model(tf.random.normal((BATCH_SIZE, SEQ_LEN, NUM_NOTES)), tf.zeros((BATCH_SIZE, NUM_STYLES)))
     model.summary()
     print(model.decoder_block.output.shape[1])
-    print(ENCODER_UNITS)
-    ENCODER_UNITS = 256
-    print(ENCODER_UNITS)

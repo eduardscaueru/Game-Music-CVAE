@@ -1,5 +1,6 @@
 from model import *
 from dataset import *
+from generate import generate_song
 tf.get_logger().setLevel('ERROR')
 
 
@@ -26,6 +27,7 @@ def elbo(z_mu, z_rho, decoded_seqs, original_seqs):
     # print(tf.reduce_max(x) - 0.0001)
     # y = tf.where(tf.reduce_max(decoded_seqs) - 0.001 < decoded_seqs, 1., 0.)
     # print(y)
+    # print("sub 0 decoded values", len(decoded_seqs[decoded_seqs < 0]))
     bce = keras.losses.binary_crossentropy(original_seqs, decoded_seqs)
     # kl loss
     kl = kl_loss(z_mu, z_rho)
@@ -38,10 +40,12 @@ def train(latent_dim, epochs, dataset):
     note_target = dataset[0][1]
     style_data = dataset[0][3]
     num_seqs = note_data.shape[0]
-    print(note_data.shape)
+    print("note shape", note_data.shape)
+    print("style shape", style_data.shape)
+    # print("note_data between", len(note_data[0 < note_data < 1]))
 
     cvae = CVAE(latent_dim)
-    optimizer = keras.optimizers.Adam(learning_rate=0.001)
+    optimizer = keras.optimizers.Adam()
 
     kl_loss_tracker = keras.metrics.Mean(name='kl_loss')
     bce_loss_tracker = keras.metrics.Mean(name='bce_loss')
@@ -59,13 +63,20 @@ def train(latent_dim, epochs, dataset):
                 target_seqs = note_target[start_batch:start_batch + BATCH_SIZE, :, :, 0]
                 style_labels = style_data[start_batch:start_batch + BATCH_SIZE, 1, :]
 
+                flat_seq = seqs.flatten()
+                for f in flat_seq:
+                    if 0 < f < 1:
+                        print("nu e bine")
+                        break
+
                 # forward pass
                 z_mu, z_rho, decoded_seqs = cvae(seqs, style_labels)
                 if epoch == EPOCHS - 1:
                     print(decoded_seqs[0, 0, :])
 
                 # compute loss
-                bce, kl = elbo(z_mu, z_rho, decoded_seqs, target_seqs)
+                bce, kl = elbo(z_mu, z_rho, decoded_seqs, seqs)
+                # print("sub 0 bce values", len(bce[bce < 0]))
                 loss = bce + BETA * kl
 
                 gradients = tape.gradient(loss, cvae.variables)
@@ -92,6 +103,54 @@ def train(latent_dim, epochs, dataset):
         # display metrics at the end of each epoch.
         epoch_kl, epoch_bce = kl_loss_tracker.result(), bce_loss_tracker.result()
         print(f'epoch: {epoch}, bce: {epoch_bce:.4f}, kl_div: {epoch_kl:.4f}')
+
+        if epoch > 0 and epoch % 50 == 0:
+            label = np.zeros((1, NUM_STYLES))
+            label[:, 0] = 1
+            generated = generate_song(cvae, 2, label)
+            print(np.max(generated))
+            print(len(generated[generated > 0.1]))
+            print(generated.shape)
+
+            t = 0
+            final = np.zeros(
+                (NUM_INSTRUMENTS + 1, generated.shape[0] * generated.shape[1], NUM_NOTES_INSTRUMENT, NOTE_UNITS))
+            instrument_max_probs = {i: 0 for i in range(NUM_INSTRUMENTS + 1)}
+            print(final.shape)
+            for bars in range(generated.shape[0]):
+                for time_step in range(generated.shape[1]):
+                    for i in range(NUM_INSTRUMENTS + 1):
+                        instrument_seq = generated[bars, time_step,
+                                         i * NUM_NOTES_INSTRUMENT:(i + 1) * NUM_NOTES_INSTRUMENT]
+                        selected_note_idx = np.argmax(instrument_seq)
+                        max_prob = np.max(instrument_seq)
+
+                        instrument_max_probs[i] += max_prob
+
+                        final[i, t, selected_note_idx, 1] = 1
+                    t += 1
+
+            final.tofile('out/generated.dat')
+
+            sorted_instruments = sorted(instrument_max_probs.items(), key=lambda x: x[1], reverse=True)
+            print(sorted_instruments)
+            selected_instruments = [(idx_to_instrument[x[0]], final[x[0], :, :, :]) for x in
+                                    sorted_instruments]  # sorted_instruments[:4]
+
+            # selected_instruments = []
+            # for instrument_idx in range(NUM_INSTRUMENTS + 1):
+            #     if np.sum(final[instrument_idx, :, :, 1]) > 0:
+            #         print(instrument_idx, idx_to_instrument[instrument_idx])
+            #         selected_instruments.append((idx_to_instrument[instrument_idx], final[instrument_idx, :, :, :]))
+
+            pm_song = pm.PrettyMIDI()
+            for program, piano_roll in selected_instruments:
+                encoded = midi_encode_v2(piano_roll, program=program)
+                pm_song.instruments.append(encoded.instruments[0])
+
+            f = open("out/generated_test_epoch_" + str(epoch) + ".mid", "w")
+            f.close()
+            pm_song.write("out/generated_test_epoch_" + str(epoch) + ".mid")
 
         # reset metric states
         kl_loss_tracker.reset_state()
