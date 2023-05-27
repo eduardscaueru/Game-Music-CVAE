@@ -1,4 +1,10 @@
-from train import *
+# from train import train_model
+from dataset import load_all
+from constants import *
+import numpy as np
+import tensorflow as tf
+import pretty_midi as pm
+from midi_util import midi_encode_v2, idx_to_instrument
 
 
 def generate_song(cvae, length, style_label):
@@ -15,8 +21,12 @@ def generate_song(cvae, length, style_label):
 
 
 if __name__ == "__main__":
+    # pass
     data = load_all(styles, BATCH_SIZE, SEQ_LEN)
-    model, _, _ = train(LATENT_DIM, EPOCHS, data)
+    # model, _, _ = train_model(LATENT_DIM, EPOCHS, data)
+    model_name = 'test'
+    model = tf.keras.models.load_model('out/models/' + model_name)
+    model.summary()
     label = np.zeros((1, NUM_STYLES))
     label[:, 0] = 1
     generated = generate_song(model, 2, label)
@@ -60,3 +70,4 @@ if __name__ == "__main__":
     f = open("out/generated_test.mid", "w")
     f.close()
     pm_song.write("out/generated_test.mid")
+

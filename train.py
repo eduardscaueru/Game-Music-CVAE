@@ -1,6 +1,8 @@
 from model import *
-from dataset import *
+from dataset import idx_to_instrument, midi_encode_v2
 from generate import generate_song
+import pretty_midi as pm
+from dataset import load_all
 tf.get_logger().setLevel('ERROR')
 
 
@@ -28,14 +30,14 @@ def elbo(z_mu, z_rho, decoded_seqs, original_seqs):
     # y = tf.where(tf.reduce_max(decoded_seqs) - 0.001 < decoded_seqs, 1., 0.)
     # print(y)
     # print("sub 0 decoded values", len(decoded_seqs[decoded_seqs < 0]))
-    bce = keras.losses.binary_crossentropy(original_seqs, decoded_seqs)
+    bce = keras.losses.binary_crossentropy(tf.cast(original_seqs, decoded_seqs.dtype), decoded_seqs)
     # kl loss
     kl = kl_loss(z_mu, z_rho)
 
     return bce, kl
 
 
-def train(latent_dim, epochs, dataset):
+def train_model(latent_dim, epochs, dataset):
     note_data = dataset[0][0]
     note_target = dataset[0][1]
     style_data = dataset[0][3]
@@ -104,7 +106,7 @@ def train(latent_dim, epochs, dataset):
         epoch_kl, epoch_bce = kl_loss_tracker.result(), bce_loss_tracker.result()
         print(f'epoch: {epoch}, bce: {epoch_bce:.4f}, kl_div: {epoch_kl:.4f}')
 
-        if epoch > 0 and epoch % 50 == 0:
+        if epoch > 0 and epoch % GENERATE_EVERY_EPOCH == 0:
             label = np.zeros((1, NUM_STYLES))
             label[:, 0] = 1
             generated = generate_song(cvae, 2, label)
@@ -160,5 +162,9 @@ def train(latent_dim, epochs, dataset):
 
 
 if __name__ == "__main__":
+    print(tf.version.VERSION)
+    print(np.version.version)
     data = load_all(styles, BATCH_SIZE, SEQ_LEN)
-    train(LATENT_DIM, EPOCHS, data)
+    cvae, _, _ = train_model(LATENT_DIM, EPOCHS, data)
+    model_name = "test"
+    cvae.save('out/models/' + model_name)

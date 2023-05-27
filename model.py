@@ -45,17 +45,19 @@ class CVAE(keras.Model):
         self.latent_block = get_latent(latent_dim)
         self.decoder_block = get_decoder(latent_dim)
 
-    def call(self, seq, labels):
+    def call(self, np_seq, np_labels):
+        seq = tf.convert_to_tensor(np_seq, dtype=tf.float32)
+        labels = tf.convert_to_tensor(np_labels, dtype=tf.float32)
         # encoder q(z|x,y)
         enc1_output = self.encoder_block(seq)
         # concat feature maps and one hot label vector
-        img_lbl_concat = np.concatenate((enc1_output, labels), axis=1)
+        img_lbl_concat = tf.concat([enc1_output, labels], 1)
         z_mu, z_rho = self.latent_block(img_lbl_concat)
 
         z = sampling(z_mu, z_rho)
 
         # decoder p(x|z,y)
-        z_lbl_concat = np.concatenate((z, labels), axis=1)
+        z_lbl_concat = tf.concat([z, labels], 1)
         decoded_seq = self.decoder_block(z_lbl_concat)
 
         return z_mu, z_rho, decoded_seq
