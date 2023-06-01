@@ -35,7 +35,7 @@ def compute_drum_piano_roll(instrument, piano_roll, fs):
 
 def midi_encode_v2(piano_roll, program=16):
 
-    piano_roll = piano_roll[:, :, 1].T
+    piano_roll = piano_roll[:, :].T
 
     notes, frames = piano_roll.shape
     encoded = pm.PrettyMIDI()
@@ -120,7 +120,8 @@ def midi_decode_v2(p):
     # TODO: what should be the instrument encoding for drums? for now in NUM_INSTRUMENTS
     # drum_roll_play = np.zeros((pitches, max_time_steps))
     # drum_roll_volume = np.zeros((pitches, max_time_steps))
-    final = np.zeros((max_time_steps, (NUM_INSTRUMENTS + 1) * pitches, 2)) # + drum dimension
+    # final = np.zeros((max_time_steps, (NUM_INSTRUMENTS + 1) * pitches, NOTE_UNITS)) # + drum dimension
+    final = np.zeros((max_time_steps, (NUM_INSTRUMENTS + 1) * pitches))
     drums_sorted = sorted([len(instrument.notes) for instrument in p.instruments if instrument.is_drum], reverse=True)
     max_drum_notes = None
     if len(drums_sorted) > 0:
@@ -135,8 +136,9 @@ def midi_decode_v2(p):
             # drum_roll_play = drum_roll_play + t_play
             # drum_roll_volume = drum_roll_volume + t_volume
             instrument_idx = instrument_to_idx[-1]
-            final[:, instrument_idx * pitches:(instrument_idx + 1) * pitches, 0] = t_play.T
-            final[:, instrument_idx * pitches:(instrument_idx + 1) * pitches, 1] = t_volume.T
+            final[:, instrument_idx * pitches:(instrument_idx + 1) * pitches] = t_play.T
+            # final[:, instrument_idx * pitches:(instrument_idx + 1) * pitches, 0] = t_play.T
+            # final[:, instrument_idx * pitches:(instrument_idx + 1) * pitches, 1] = t_volume.T
         elif instrument.program in instrument_to_idx:
             # print(np.stack([t_volume.T, t_play.T], axis=2).shape)
             # print(t_volume.flatten('F')[20*128:21*128])
@@ -147,8 +149,9 @@ def midi_decode_v2(p):
             # print(final[:, :, 0].shape)
             # print(final[:, instrument.program * pitches:(instrument.program + 1) * pitches, 0].shape) # (383, 128)
             instrument_idx = instrument_to_idx[instrument.program]
-            final[:, instrument_idx * pitches:(instrument_idx + 1) * pitches, 0] = t_play.T
-            final[:, instrument_idx * pitches:(instrument_idx + 1) * pitches, 1] = t_volume.T
+            final[:, instrument_idx * pitches:(instrument_idx + 1) * pitches] = t_play.T
+            # final[:, instrument_idx * pitches:(instrument_idx + 1) * pitches, 0] = t_play.T
+            # final[:, instrument_idx * pitches:(instrument_idx + 1) * pitches, 1] = t_volume.T
             #final[:, instrument.program] = np.stack([t_volume.T, t_play.T], axis=2) # 37
 
     # Limit the notes in any case there are more drums

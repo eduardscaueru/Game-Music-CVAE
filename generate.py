@@ -29,13 +29,13 @@ if __name__ == "__main__":
     model.summary()
     label = np.zeros((1, NUM_STYLES))
     label[:, 0] = 1
-    generated = generate_song(model, 2, label)
+    generated = generate_song(model, 5, label)
     print(np.max(generated))
     print(len(generated[generated > 0.1]))
     print(generated.shape)
 
     t = 0
-    final = np.zeros((NUM_INSTRUMENTS + 1, generated.shape[0] * generated.shape[1], NUM_NOTES_INSTRUMENT, NOTE_UNITS))
+    final = np.zeros((NUM_INSTRUMENTS + 1, generated.shape[0] * generated.shape[1], NUM_NOTES_INSTRUMENT))
     instrument_max_probs = {i: 0 for i in range(NUM_INSTRUMENTS + 1)}
     print(final.shape)
     for bars in range(generated.shape[0]):
@@ -47,14 +47,14 @@ if __name__ == "__main__":
 
                 instrument_max_probs[i] += max_prob
 
-                final[i, t, selected_note_idx, 1] = 1
+                final[i, t, selected_note_idx] = 1
             t += 1
 
     final.tofile('out/generated.dat')
 
     sorted_instruments = sorted(instrument_max_probs.items(), key=lambda x: x[1], reverse=True)
     print(sorted_instruments)
-    selected_instruments = [(idx_to_instrument[x[0]], final[x[0], :, :, :]) for x in sorted_instruments] #sorted_instruments[:4]
+    selected_instruments = [(idx_to_instrument[x[0]], final[x[0], :, :]) for x in sorted_instruments] #sorted_instruments[:4]
 
     # selected_instruments = []
     # for instrument_idx in range(NUM_INSTRUMENTS + 1):
@@ -67,7 +67,7 @@ if __name__ == "__main__":
         encoded = midi_encode_v2(piano_roll, program=program)
         pm_song.instruments.append(encoded.instruments[0])
 
-    f = open("out/generated_test.mid", "w")
+    f = open("out/generated_test_loaded_model.mid", "w")
     f.close()
-    pm_song.write("out/generated_test.mid")
+    pm_song.write("out/generated_test_loaded_model.mid")
 

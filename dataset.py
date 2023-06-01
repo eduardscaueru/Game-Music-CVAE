@@ -81,8 +81,8 @@ def load_all(styles, batch_size, time_steps):
                 note_data += train_data
                 note_target += label_data
 
-                beats = [compute_beat(i, NOTES_PER_BAR) for i in range(len(seq))]
-                beat_data += stagger(beats, time_steps)[0]
+                # beats = [compute_beat(i, NOTES_PER_BAR) for i in range(len(seq))]
+                # beat_data += stagger(beats, time_steps)[0]
 
                 # style_data += stagger([style_hot for i in range(len(seq))], time_steps)[0]
                 style_data += np.tile(np.asarray(style_hot), (np.array(train_data).shape[0], time_steps, 1)).tolist()
@@ -98,11 +98,11 @@ def clamp_midi(sequence):
     """
     Clamps the midi base on the MIN and MAX notes
     """
-    new_seq = np.zeros((sequence.shape[0], NUM_NOTES_INSTRUMENT * (NUM_INSTRUMENTS + 1), sequence.shape[2]))
+    new_seq = np.zeros((sequence.shape[0], NUM_NOTES_INSTRUMENT * (NUM_INSTRUMENTS + 1)))
     # print(new_seq.shape)
     for i in range(NUM_INSTRUMENTS + 1):
         # print(i, i * diff, (i + 1) * diff, MIDI_MAX_NOTES * i + MIN_NOTE, MIDI_MAX_NOTES * i + MAX_NOTE)
-        new_seq[:, i * NUM_NOTES_INSTRUMENT:(i + 1) * NUM_NOTES_INSTRUMENT, :] = sequence[:, MIDI_MAX_NOTES * i + MIN_NOTE:MIDI_MAX_NOTES * i + MAX_NOTE, :]
+        new_seq[:, i * NUM_NOTES_INSTRUMENT:(i + 1) * NUM_NOTES_INSTRUMENT] = sequence[:, MIDI_MAX_NOTES * i + MIN_NOTE:MIDI_MAX_NOTES * i + MAX_NOTE]
     # print(new_seq.shape)
     return new_seq
 
@@ -116,7 +116,7 @@ def unclamp_midi(sequence):
 
 if __name__ == "__main__":
     data = load_all(styles, BATCH_SIZE, SEQ_LEN)
-    print(data[0][3][0, 60, :])
+    # print(data[0][3][0, 60])
     print(data[0][3].shape)
     print(data[0][0].shape)
 

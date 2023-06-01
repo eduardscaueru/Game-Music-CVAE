@@ -61,8 +61,8 @@ def train_model(latent_dim, epochs, dataset):
 
         for start_batch in np.arange(0, num_seqs - num_seqs % BATCH_SIZE, BATCH_SIZE):
             with tf.GradientTape() as tape:
-                seqs = note_data[start_batch:start_batch + BATCH_SIZE, :, :, 0]
-                target_seqs = note_target[start_batch:start_batch + BATCH_SIZE, :, :, 0]
+                seqs = note_data[start_batch:start_batch + BATCH_SIZE, :, :]
+                target_seqs = note_target[start_batch:start_batch + BATCH_SIZE, :, :]
                 style_labels = style_data[start_batch:start_batch + BATCH_SIZE, 1, :]
 
                 flat_seq = seqs.flatten()
@@ -108,7 +108,8 @@ def train_model(latent_dim, epochs, dataset):
 
         if epoch > 0 and epoch % GENERATE_EVERY_EPOCH == 0:
             label = np.zeros((1, NUM_STYLES))
-            label[:, 0] = 1
+            label[:, 2] = 0.5
+            label[:, 6] = 0.5
             generated = generate_song(cvae, 2, label)
             print(np.max(generated))
             print(len(generated[generated > 0.1]))
@@ -116,7 +117,7 @@ def train_model(latent_dim, epochs, dataset):
 
             t = 0
             final = np.zeros(
-                (NUM_INSTRUMENTS + 1, generated.shape[0] * generated.shape[1], NUM_NOTES_INSTRUMENT, NOTE_UNITS))
+                (NUM_INSTRUMENTS + 1, generated.shape[0] * generated.shape[1], NUM_NOTES_INSTRUMENT))
             instrument_max_probs = {i: 0 for i in range(NUM_INSTRUMENTS + 1)}
             print(final.shape)
             for bars in range(generated.shape[0]):
@@ -129,15 +130,14 @@ def train_model(latent_dim, epochs, dataset):
 
                         instrument_max_probs[i] += max_prob
 
-                        final[i, t, selected_note_idx, 1] = 1
+                        final[i, t, selected_note_idx] = 1
                     t += 1
 
             final.tofile('out/generated.dat')
 
             sorted_instruments = sorted(instrument_max_probs.items(), key=lambda x: x[1], reverse=True)
             print(sorted_instruments)
-            selected_instruments = [(idx_to_instrument[x[0]], final[x[0], :, :, :]) for x in
-                                    sorted_instruments]  # sorted_instruments[:4]
+            selected_instruments = [(idx_to_instrument[x[0]], final[x[0], :, :]) for x in sorted_instruments[:3]]
 
             # selected_instruments = []
             # for instrument_idx in range(NUM_INSTRUMENTS + 1):
