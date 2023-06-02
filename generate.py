@@ -20,6 +20,54 @@ def generate_song(cvae, length, style_label):
     return generated_seqs
 
 
+def generate(cvae, length):
+    label = np.zeros((1, NUM_STYLES))
+    label[:, 2] = 0.5
+    label[:, 6] = 0.25
+    label[:, 0] = 0.25
+    generated = generate_song(cvae, length, label)
+    print(np.max(generated))
+    print(len(generated[generated > 0.1]))
+    print(generated.shape)
+
+    t = 0
+    final = np.zeros(
+        (NUM_INSTRUMENTS + 1, generated.shape[0] * generated.shape[1], NUM_NOTES_INSTRUMENT))
+    instrument_max_probs = {i: 0 for i in range(NUM_INSTRUMENTS + 1)}
+    print(final.shape)
+    for bars in range(generated.shape[0]):
+        for time_step in range(generated.shape[1]):
+            for i in range(NUM_INSTRUMENTS + 1):
+                instrument_seq = generated[bars, time_step,
+                                 i * NUM_NOTES_INSTRUMENT:(i + 1) * NUM_NOTES_INSTRUMENT]
+                selected_note_idx = np.argmax(instrument_seq)
+                max_prob = np.max(instrument_seq)
+
+                instrument_max_probs[i] += max_prob
+
+                final[i, t, selected_note_idx] = 1
+            t += 1
+
+    final.tofile('out/generated.dat')
+
+    sorted_instruments = sorted(instrument_max_probs.items(), key=lambda x: x[1], reverse=True)
+    print(sorted_instruments)
+    selected_instruments = [(idx_to_instrument[x[0]], final[x[0], :, :]) for x in sorted_instruments[:3]]
+
+    # selected_instruments = []
+    # for instrument_idx in range(NUM_INSTRUMENTS + 1):
+    #     if np.sum(final[instrument_idx, :, :, 1]) > 0:
+    #         print(instrument_idx, idx_to_instrument[instrument_idx])
+    #         selected_instruments.append((idx_to_instrument[instrument_idx], final[instrument_idx, :, :, :]))
+
+    pm_song = pm.PrettyMIDI()
+    for program, piano_roll in selected_instruments:
+        encoded = midi_encode_v2(piano_roll, program=program)
+        pm_song.instruments.append(encoded.instruments[0])
+
+    return pm_song
+
+
 if __name__ == "__main__":
     # pass
     data = load_all(styles, BATCH_SIZE, SEQ_LEN)
