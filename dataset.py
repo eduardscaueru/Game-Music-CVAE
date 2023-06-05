@@ -111,7 +111,13 @@ def unclamp_midi(sequence):
     """
     Restore clamped MIDI sequence back to MIDI note values
     """
-    return np.pad(sequence, ((0, 0), (MIN_NOTE, 0), (0, 0)), 'constant')
+    new_seq = np.zeros((sequence.shape[0], MIDI_MAX_NOTES * (NUM_INSTRUMENTS + 1)))
+    # print(new_seq.shape)
+    for i in range(NUM_INSTRUMENTS + 1):
+        # print(i, i * diff, (i + 1) * diff, MIDI_MAX_NOTES * i + MIN_NOTE, MIDI_MAX_NOTES * i + MAX_NOTE)
+        new_seq[:, i * NUM_NOTES_INSTRUMENT + MIN_NOTE:i * NUM_NOTES_INSTRUMENT + MAX_NOTE] = sequence[:, i * NUM_NOTES_INSTRUMENT: (i + 1) * NUM_NOTES_INSTRUMENT]
+    # print(new_seq.shape)
+    return new_seq
 
 
 if __name__ == "__main__":
@@ -119,6 +125,8 @@ if __name__ == "__main__":
     # print(data[0][3][0, 60])
     print(data[0][3].shape)
     print(data[0][0].shape)
+
+    print(unclamp_midi(data[0][0][0, :, :]).shape)
 
     # print(np.arange(0, 24 - 24 % BATCH_SIZE, BATCH_SIZE))
     # piece = pm.PrettyMIDI("out/test_in.mid")

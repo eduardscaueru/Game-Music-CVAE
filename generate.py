@@ -20,11 +20,7 @@ def generate_song(cvae, length, style_label):
     return generated_seqs
 
 
-def generate(cvae, length):
-    label = np.zeros((1, NUM_STYLES))
-    label[:, 2] = 0.5
-    label[:, 6] = 0.25
-    label[:, 0] = 0.25
+def generate(cvae, length, label):
     generated = generate_song(cvae, length, label)
     print(np.max(generated))
     print(len(generated[generated > 0.1]))
@@ -52,7 +48,7 @@ def generate(cvae, length):
 
     sorted_instruments = sorted(instrument_max_probs.items(), key=lambda x: x[1], reverse=True)
     print(sorted_instruments)
-    selected_instruments = [(idx_to_instrument[x[0]], final[x[0], :, :]) for x in sorted_instruments[:3]]
+    selected_instruments = [(idx_to_instrument[x[0]], final[x[0], :, :]) for x in sorted_instruments[:MAX_INSTRUMENTS_GENERATED]]
 
     # selected_instruments = []
     # for instrument_idx in range(NUM_INSTRUMENTS + 1):

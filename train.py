@@ -3,7 +3,28 @@ from dataset import idx_to_instrument, midi_encode_v2
 from generate import generate
 import pretty_midi as pm
 from dataset import load_all
+from keras import backend as K
 tf.get_logger().setLevel('ERROR')
+
+
+def f1(y_true, y_pred):
+    def recall_m(y_true, y_pred):
+        TP = tf.cast(K.sum(K.round(K.clip(y_true * y_pred, 0, 1))), dtype=tf.float32)
+        Positives = tf.cast(K.sum(K.round(K.clip(y_true, 0, 1))), dtype=tf.float32)
+
+        recall = TP / (Positives + K.epsilon())
+        return recall
+
+    def precision_m(y_true, y_pred):
+        TP = tf.cast(K.sum(K.round(K.clip(y_true * y_pred, 0, 1))), dtype=tf.float32)
+        Pred_Positives = tf.cast(K.sum(K.round(K.clip(y_pred, 0, 1))), dtype=tf.float32)
+
+        precision = TP / (Pred_Positives + K.epsilon())
+        return precision
+
+    precision, recall = precision_m(y_true, y_pred), recall_m(y_true, y_pred)
+
+    return 2 * ((precision * recall) / (precision + recall + K.epsilon()))
 
 
 # closed form kl loss computation between variational posterior q(z|x) and unit Gaussian prior p(z)
@@ -38,7 +59,11 @@ def elbo(z_mu, z_rho, decoded_seqs, original_seqs):
 
 
 def save_generated_song(model, epoch, length):
-    pm_song = generate(model, length)
+    label = np.zeros((1, NUM_STYLES))
+    label[:, 7] = 0.2
+    label[:, 3] = 0.3
+    label[:, 1] = 0.5
+    pm_song = generate(model, length, label)
     f = open("out/generated_test_epoch_" + str(epoch) + ".mid", "w")
     f.close()
     pm_song.write("out/generated_test_epoch_" + str(epoch) + ".mid")
@@ -58,6 +83,7 @@ def train_model(latent_dim, epochs, dataset):
 
     kl_loss_tracker = keras.metrics.Mean(name='kl_loss')
     bce_loss_tracker = keras.metrics.Mean(name='bce_loss')
+    f1_tracker = keras.metrics.Mean(name='f1')
 
     label_list = None
     z_mu_list = None
@@ -87,6 +113,8 @@ def train_model(latent_dim, epochs, dataset):
                 bce, kl = elbo(z_mu, z_rho, decoded_seqs, seqs)
                 # print("sub 0 bce values", len(bce[bce < 0]))
                 loss = bce + BETA * kl
+                # compute F1 score
+                f1_score = f1(seqs, decoded_seqs)
 
                 gradients = tape.gradient(loss, cvae.variables)
 
@@ -94,6 +122,7 @@ def train_model(latent_dim, epochs, dataset):
 
                 kl_loss_tracker.update_state(BETA * kl)
                 bce_loss_tracker.update_state(bce)
+                f1_tracker.update_state(f1_score)
 
                 # save encoded means and labels for latent space visualization
                 if label_list is None:
@@ -110,16 +139,17 @@ def train_model(latent_dim, epochs, dataset):
         # generate_conditioned_digits(model, dataset_mean, dataset_std)
 
         # display metrics at the end of each epoch.
-        epoch_kl, epoch_bce = kl_loss_tracker.result(), bce_loss_tracker.result()
-        print(f'epoch: {epoch}, bce: {epoch_bce:.4f}, kl_div: {epoch_kl:.4f}')
+        epoch_kl, epoch_bce, epoch_f1 = kl_loss_tracker.result(), bce_loss_tracker.result(), f1_tracker.result()
+        print(f'epoch: {epoch}, bce: {epoch_bce:.4f}, kl_div: {epoch_kl:.4f}, f1: {epoch_f1:.4f}')
 
         if epoch > 0 and epoch % GENERATE_EVERY_EPOCH == 0:
-            save_generated_song(cvae, epoch, 6)
-            model.save('out/models/' + "test" + "_epoch_" + str(epoch))
+            save_generated_song(cvae, epoch, 4)
+            # cvae.save('out/models/' + "test" + "_epoch_" + str(epoch))
 
         # reset metric states
         kl_loss_tracker.reset_state()
         bce_loss_tracker.reset_state()
+        f1_tracker.reset_state()
 
     return cvae, z_mu_list, label_list
 
