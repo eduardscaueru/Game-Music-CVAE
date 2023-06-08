@@ -32,12 +32,22 @@ def compute_genre(genre_id):
 def stagger(data, time_steps):
     dataX, dataY = [], []
     # Buffer training for first event
-    data = ([np.zeros_like(data[0])] * time_steps) + list(data)
+    # s = 0
+    # for i in range(data.shape[0]):
+    #     x = data[i, :]
+    #     s += len(x[x > 1])
+    # print(s)
+    # data = ([np.zeros_like(data[0])] * time_steps) + list(data)
+    # print("Data shape after: ", np.asarray(data).shape)
 
     # Chop a sequence into measures
-    for i in range(0, len(data) - time_steps, NOTES_PER_BAR):
-        dataX.append(data[i:i + time_steps])
-        dataY.append(data[i + 1:(i + time_steps + 1)])
+    # for i in range(0, len(data), NOTES_PER_BAR):
+    #     dataX.append(data[i:i + time_steps, :])
+    #     dataY.append(data[i + 1:(i + time_steps + 1), :])
+    for i in range(0, data.shape[0], time_steps):
+        if i > data.shape[0] - time_steps:
+            break
+        dataX.append(data[i: i + time_steps, :])
     return dataX, dataY
 
 
@@ -99,10 +109,9 @@ def clamp_midi(sequence):
     Clamps the midi base on the MIN and MAX notes
     """
     new_seq = np.zeros((sequence.shape[0], NUM_NOTES_INSTRUMENT * (NUM_INSTRUMENTS + 1)))
-    # print(new_seq.shape)
     for i in range(NUM_INSTRUMENTS + 1):
         # print(i, i * diff, (i + 1) * diff, MIDI_MAX_NOTES * i + MIN_NOTE, MIDI_MAX_NOTES * i + MAX_NOTE)
-        new_seq[:, i * NUM_NOTES_INSTRUMENT:(i + 1) * NUM_NOTES_INSTRUMENT] = sequence[:, MIDI_MAX_NOTES * i + MIN_NOTE:MIDI_MAX_NOTES * i + MAX_NOTE]
+        new_seq[:, i * NUM_NOTES_INSTRUMENT:(i + 1) * NUM_NOTES_INSTRUMENT] = sequence[:, MIDI_MAX_NOTES * i + MIN_NOTE:MIDI_MAX_NOTES * i + MAX_NOTE + 1]
     # print(new_seq.shape)
     return new_seq
 
@@ -111,12 +120,9 @@ def unclamp_midi(sequence):
     """
     Restore clamped MIDI sequence back to MIDI note values
     """
-    new_seq = np.zeros((sequence.shape[0], MIDI_MAX_NOTES * (NUM_INSTRUMENTS + 1)))
-    # print(new_seq.shape)
-    for i in range(NUM_INSTRUMENTS + 1):
-        # print(i, i * diff, (i + 1) * diff, MIDI_MAX_NOTES * i + MIN_NOTE, MIDI_MAX_NOTES * i + MAX_NOTE)
-        new_seq[:, i * NUM_NOTES_INSTRUMENT + MIN_NOTE:i * NUM_NOTES_INSTRUMENT + MAX_NOTE] = sequence[:, i * NUM_NOTES_INSTRUMENT: (i + 1) * NUM_NOTES_INSTRUMENT]
-    # print(new_seq.shape)
+    new_seq = np.zeros((sequence.shape[0], MIDI_MAX_NOTES))
+    new_seq[:, MIN_NOTE:MAX_NOTE + 1] = sequence[:, :]
+
     return new_seq
 
 
@@ -125,9 +131,7 @@ if __name__ == "__main__":
     # print(data[0][3][0, 60])
     print(data[0][3].shape)
     print(data[0][0].shape)
-
-    print(unclamp_midi(data[0][0][0, :, :]).shape)
-
+    # print(data[0][0][10, :2, :127])
     # print(np.arange(0, 24 - 24 % BATCH_SIZE, BATCH_SIZE))
     # piece = pm.PrettyMIDI("out/test_in.mid")
     # beats, decoded = midi_decode_v2(piece)

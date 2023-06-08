@@ -1,6 +1,7 @@
 """
 Handles MIDI file loading
 """
+import pretty_midi
 import pretty_midi as pm
 import numpy as np
 from constants import *
@@ -9,6 +10,9 @@ import os
 import glob
 import tensorflow as tf
 from more_itertools.more import unzip
+import seaborn as sns
+import matplotlib.pyplot as plt
+import pandas as pd
 
 
 def load_midi_v2(fname):
@@ -112,7 +116,7 @@ def midi_decode_v2(p):
         t_volume = vfunc(t_volume)
 
         t_play = piano_roll[1]
-        t_play[t_play == 100] = 1
+        t_play[t_play > 0] = 1
 
         piano_roll.append(t_volume)
 
@@ -219,14 +223,55 @@ def delete_same_files(dir_name):
                 os.remove(file)
 
 
+notes_freq_per_song = {g: {} for i, g in enumerate(genre)}
+notes_per_instrument = {-1: 0}
+
+
+def sum_dictionaries(a, b):
+    d = a.copy()
+
+    for k, v in b.items():
+        if k not in d:
+            d[k] = v
+        else:
+            d[k] += v
+
+    return d
+
+
 def limit_instruments():
     instrument_freq = {}
-    for style_folders in styles:
+    for i, style_folders in enumerate(styles):
         for style_folder in style_folders:
             for root, dirs, files in os.walk(style_folder, topdown=False):
                 for name in files:
                     midi_file_name = os.path.join(root, name)
                     song = pm.PrettyMIDI(midi_file_name)
+                    note_freq = {}
+                    for instrument in song.instruments:
+                        # Compute len notes
+                        if instrument.is_drum:
+                            notes_per_instrument[-1] += len(instrument.notes)
+                        else:
+                            if instrument.program not in notes_per_instrument:
+                                notes_per_instrument[instrument.program] = len(instrument.notes)
+                            else:
+                                notes_per_instrument[instrument.program] += len(instrument.notes)
+
+                        # Compute notes freq
+                        for note in instrument.notes:
+                            if note.pitch not in note_freq:
+                                note_freq[note.pitch] = 0
+                            else:
+                                note_freq[note.pitch] += 1
+
+                    game = style_folder.split("/")[-1]
+                    if game in notes_freq_per_song[genre[i]]:
+                        notes_freq_per_song[genre[i]][game] = sum_dictionaries(notes_freq_per_song[genre[i]][game],
+                                                                               note_freq)
+                    else:
+                        notes_freq_per_song[genre[i]][game] = note_freq
+
                     sorted_instruments_by_notes = sorted([(len(x.notes), x.program) for x in song.instruments if not x.is_drum],
                                                          key=lambda x: x[0], reverse=True)[:MAX_INSTRUMENTS_PER_SONG]
                     _, programs = unzip(sorted_instruments_by_notes)
@@ -252,41 +297,35 @@ if __name__ == '__main__':
     # pp = mido.MidiFile("out/test_in.mid")
     # midi_decode_v1(pp)
     print("INTRUMENT to IDX:", instrument_to_idx)
-    piece = pm.PrettyMIDI("data/arcade/mario/Koopa_Bros._Theme.mid")
-    beats, decoded = midi_decode_v2(piece)
-    print(beats[1], decoded.shape)
+    print(notes_freq_per_song)
+    notes_freq = {}
+    for k1, v1 in notes_freq_per_song.items():
+        for k, v in v1.items():
+            for pitch, f in v.items():
+                if pitch not in notes_freq:
+                    notes_freq[pitch] = f
+                else:
+                    notes_freq[pitch] += f
+    # plt.bar(notes_freq_per_song["action"]["doom"].keys(), notes_freq_per_song["action"]["doom"].values())
+    # plt.title("Doom")
+    print(notes_freq)
+    plt.bar(notes_freq.keys(), notes_freq.values())
+    plt.title("Note pitches for all MIDI files")
+    plt.show()
+
+    notes_instruments = sorted(list(notes_per_instrument.items()), key=lambda x: x[1], reverse=True)
+    notes_instruments = [(pretty_midi.program_to_instrument_name(x[0]).replace(" ", "\n"), x[1]) if x[0] != -1 else ("Drums", x[1])for x in notes_instruments]
+    print(notes_instruments)
+
+    df = pd.DataFrame(notes_instruments, columns=['instrument', 'notes'])
+    plt.figure(figsize=(20, 5))
+    sns.barplot(data=df, x='instrument', y='notes')
+    plt.title("Instruments based on number of notes")
+    plt.show()
+    # piece = pm.PrettyMIDI("data/arcade/mario/Koopa_Bros._Theme.mid")
+    # beats, decoded = midi_decode_v2(piece)
+    # print(beats[1], decoded.shape)
     # print(decoded[32, 43 * 128:(43 + 1) * 128, 1])
     #p = midi_encode(midi_decode(p))
     #midi.write_midifile("out/test_out.mid", p)
-
-    # # pitch_class_matrix = np.array([one_hot(n % OCTAVE, OCTAVE) for n in range(NUM_NOTES_INSTRUMENT)])  # notes, octaves
-    # pitch_class_matrix = np.array([np.tile(one_hot(n % OCTAVE, OCTAVE), NUM_INSTRUMENTS + 1) for n in range(NUM_NOTES_INSTRUMENT)])  # notes, octaves
-    # pitch_class_matrix = tf.constant(pitch_class_matrix, dtype='float32')
-    # print(pitch_class_matrix)
-    # pitch_class_matrix = tf.reshape(pitch_class_matrix, [1, 1, NUM_NOTES, OCTAVE])
-    # print(pitch_class_matrix)
-    #
-    # decoded = np.asarray([decoded])
-    # # decoded = decoded[:, :16*5, :128, :]
-    # print(decoded.shape)
-    # octaves_t = []
-    # for i in range(OCTAVE):
-    #     d = decoded[:, :, i::OCTAVE, 0]
-    #     # print(d.shape[-1] % OCTAVE)
-    #     if d.shape[-1] % (OCTAVE - 1) != 0:
-    #         # print(np.zeros((decoded.shape[0], decoded.shape[1], (OCTAVE - 1) - decoded[:, :, i::OCTAVE, 0].shape[-1])).shape)
-    #         # print(i, OCTAVE, "padded", np.append(d, np.zeros((decoded.shape[0], decoded.shape[1], (OCTAVE - 1) - (d.shape[-1] % OCTAVE))), axis=2).shape)
-    #         octaves_t.append(np.append(d, np.zeros((d.shape[0], d.shape[1], (OCTAVE - 1) - (d.shape[-1] % OCTAVE))), axis=2))
-    #     else:
-    #         # print(i ,OCTAVE, decoded[:, :, i::OCTAVE, 0].shape)
-    #         octaves_t.append(d)
-    #
-    # # print(tf.constant(np.asarray([decoded[:, i::OCTAVE, 0] for i in range(OCTAVE)]), dtype='float32'))
-    # print("octaves", np.asarray(octaves_t).shape)
-    # bins_t = tf.reduce_sum(octaves_t, axis=3)
-    # print(bins_t.shape)
-    # bins_t = tf.tile(bins_t, [NUM_NOTES // OCTAVE, 1, 1])
-    # print(bins_t.shape)
-    # bins_t = tf.reshape(bins_t, [decoded.shape[0], decoded.shape[1], NUM_NOTES, 1])
-    # print(bins_t.shape)
 

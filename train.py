@@ -40,17 +40,18 @@ def kl_loss(z_mu, z_rho):
 
 def elbo(z_mu, z_rho, decoded_seqs, original_seqs):
     # reconstruction loss
-    # x = decoded_seqs[0, 0, :]
-    # for i in range(x.shape[0]):
-    #     y = x[i]
-    #     # print(y)
-    #     print(len([v for v in y if 1 < v < 0]))
-    # print(decoded_seqs[0, 0, :])
-    # print([x for x in sorted(decoded_seq[0, 0, :128], reverse=True)])
-    # print(tf.reduce_max(x) - 0.0001)
-    # y = tf.where(tf.reduce_max(decoded_seqs) - 0.001 < decoded_seqs, 1., 0.)
-    # print(y)
-    # print("sub 0 decoded values", len(decoded_seqs[decoded_seqs < 0]))
+    # original = tf.cast(original_seqs, decoded_seqs.dtype)
+    # original = tf.reshape(original, [-1])
+    # decoded = tf.reshape(decoded_seqs, [-1])
+    # # bce = keras.losses.binary_crossentropy(original, decoded)
+    # # original = original[40:50]
+    # # print(original)
+    # # original = tf.add(original, tf.constant([0, 1, 0, 1, 0], dtype=tf.float32))
+    # bce = tf.nn.sigmoid_cross_entropy_with_logits(logits=decoded, labels=original)
+    # # print("Before mean: ", bce)
+    # bce = tf.reduce_mean(bce, axis=0)
+    # # print(decoded[0, :5], original)
+    # # print("After mean: ", bce)
     bce = keras.losses.binary_crossentropy(tf.cast(original_seqs, decoded_seqs.dtype), decoded_seqs)
     # kl loss
     kl = kl_loss(z_mu, z_rho)
@@ -60,9 +61,7 @@ def elbo(z_mu, z_rho, decoded_seqs, original_seqs):
 
 def save_generated_song(model, epoch, length):
     label = np.zeros((1, NUM_STYLES))
-    label[:, 7] = 0.2
-    label[:, 3] = 0.3
-    label[:, 1] = 0.5
+    label[:, 0] = 1
     pm_song = generate(model, length, label)
     f = open("out/generated_test_epoch_" + str(epoch) + ".mid", "w")
     f.close()
@@ -79,7 +78,8 @@ def train_model(latent_dim, epochs, dataset):
     # print("note_data between", len(note_data[0 < note_data < 1]))
 
     cvae = CVAE(latent_dim)
-    optimizer = keras.optimizers.Adam()
+    lr = 1.0
+    optimizer = keras.optimizers.Adadelta(learning_rate=lr)
 
     kl_loss_tracker = keras.metrics.Mean(name='kl_loss')
     bce_loss_tracker = keras.metrics.Mean(name='bce_loss')
@@ -95,14 +95,8 @@ def train_model(latent_dim, epochs, dataset):
         for start_batch in np.arange(0, num_seqs - num_seqs % BATCH_SIZE, BATCH_SIZE):
             with tf.GradientTape() as tape:
                 seqs = note_data[start_batch:start_batch + BATCH_SIZE, :, :]
-                target_seqs = note_target[start_batch:start_batch + BATCH_SIZE, :, :]
+                # target_seqs = note_target[start_batch:start_batch + BATCH_SIZE, :, :]
                 style_labels = style_data[start_batch:start_batch + BATCH_SIZE, 1, :]
-
-                flat_seq = seqs.flatten()
-                for f in flat_seq:
-                    if 0 < f < 1:
-                        print("nu e bine")
-                        break
 
                 # forward pass
                 z_mu, z_rho, decoded_seqs = cvae(seqs, style_labels)
@@ -113,27 +107,29 @@ def train_model(latent_dim, epochs, dataset):
                 bce, kl = elbo(z_mu, z_rho, decoded_seqs, seqs)
                 # print("sub 0 bce values", len(bce[bce < 0]))
                 loss = bce + BETA * kl
+                # loss = bce
                 # compute F1 score
                 f1_score = f1(seqs, decoded_seqs)
 
-                gradients = tape.gradient(loss, cvae.variables)
+            gradients = tape.gradient(loss, cvae.variables)
+            print(np.mean([tf.reduce_mean(g) for g in gradients]))
 
-                optimizer.apply_gradients(zip(gradients, cvae.variables))
+            optimizer.apply_gradients(zip(gradients, cvae.variables))
 
-                kl_loss_tracker.update_state(BETA * kl)
-                bce_loss_tracker.update_state(bce)
-                f1_tracker.update_state(f1_score)
+            kl_loss_tracker.update_state(BETA * kl)
+            bce_loss_tracker.update_state(bce)
+            f1_tracker.update_state(f1_score)
 
-                # save encoded means and labels for latent space visualization
-                if label_list is None:
-                    label_list = style_labels
-                else:
-                    label_list = np.concatenate((label_list, style_labels))
+            # save encoded means and labels for latent space visualization
+            if label_list is None:
+                label_list = style_labels
+            else:
+                label_list = np.concatenate((label_list, style_labels))
 
-                if z_mu_list is None:
-                    z_mu_list = z_mu
-                else:
-                    z_mu_list = np.concatenate((z_mu_list, z_mu), axis=0)
+            if z_mu_list is None:
+                z_mu_list = z_mu
+            else:
+                z_mu_list = np.concatenate((z_mu_list, z_mu), axis=0)
 
         # generate new samples
         # generate_conditioned_digits(model, dataset_mean, dataset_std)
@@ -143,7 +139,7 @@ def train_model(latent_dim, epochs, dataset):
         print(f'epoch: {epoch}, bce: {epoch_bce:.4f}, kl_div: {epoch_kl:.4f}, f1: {epoch_f1:.4f}')
 
         if epoch > 0 and epoch % GENERATE_EVERY_EPOCH == 0:
-            save_generated_song(cvae, epoch, 4)
+            save_generated_song(cvae, epoch, 8)
             # cvae.save('out/models/' + "test" + "_epoch_" + str(epoch))
 
         # reset metric states

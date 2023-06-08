@@ -1,5 +1,5 @@
 # from train import train_model
-from dataset import load_all
+from dataset import load_all, unclamp_midi
 from constants import *
 import numpy as np
 import tensorflow as tf
@@ -58,7 +58,8 @@ def generate(cvae, length, label):
 
     pm_song = pm.PrettyMIDI()
     for program, piano_roll in selected_instruments:
-        encoded = midi_encode_v2(piano_roll, program=program)
+        unclamped_piano_roll = unclamp_midi(piano_roll)
+        encoded = midi_encode_v2(unclamped_piano_roll, program=program)
         pm_song.instruments.append(encoded.instruments[0])
 
     return pm_song

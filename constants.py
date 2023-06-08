@@ -2,38 +2,38 @@ import os
 
 # Define the musical styles
 genre = [
-    'action',
-    'adventure',
-    'arcade',
-    'horror'
+    # 'action',
+    'adventure'
+    # 'arcade'
+    # 'horror'
 ]
 
 styles = [
+    # [
+    #     'data/action/batman',
+    #     'data/action/doom'
+    # ],
     [
-        'data/action/batman',
-        'data/action/doom'
-    ],
-    [
-        'data/adventure/blade_runner',
-        'data/adventure/indiana_jones',
-        'data/adventure/myst'
-    ],
-    [
-        'data/arcade/blox',
-        'data/arcade/burning_monkey',
-        'data/arcade/mario'
-    ],
-    [
-        'data/horror/blood',
-        'data/horror/house_of_the_dead'
+        'data/adventure/blade_runner'
+        # 'data/adventure/indiana_jones',
+        # 'data/adventure/myst'
     ]
+    # [
+    #     'data/arcade/blox',
+    #     'data/arcade/burning_monkey',
+    #     'data/arcade/mario'
+    # ]
+    # [
+    #     'data/horror/blood',
+    #     'data/horror/house_of_the_dead'
+    # ]
 ]
 
 NUM_STYLES = sum(len(s) for s in styles)
 
-NUM_INSTRUMENTS = 17
-MAX_INSTRUMENTS_PER_SONG = 2
-MAX_INSTRUMENTS_GENERATED = 5
+NUM_INSTRUMENTS = 1
+MAX_INSTRUMENTS_PER_SONG = 1
+MAX_INSTRUMENTS_GENERATED = 3
 FS = 16
 
 # MIDI Resolution
@@ -46,10 +46,10 @@ NUM_OCTAVES = 4
 OCTAVE = 8
 
 # Min and max note (in MIDI note number)
-MIN_NOTE = 0
+MIN_NOTE = 30
 # MAX_NOTE = MIN_NOTE + NUM_OCTAVES * OCTAVE
-MAX_NOTE = 127
-NUM_NOTES_INSTRUMENT = MAX_NOTE - MIN_NOTE
+MAX_NOTE = 85
+NUM_NOTES_INSTRUMENT = MAX_NOTE - MIN_NOTE + 1
 NUM_NOTES = (NUM_INSTRUMENTS + 1) * NUM_NOTES_INSTRUMENT
 
 # Number of beats in a bar
@@ -62,21 +62,19 @@ NOTE_TIME_STEPS = 2
 NOTES_PER_BAR = NOTES_PER_BEAT * BEATS_PER_BAR * NOTE_TIME_STEPS
 
 # Training parameters
-BARS = 1
-BATCH_SIZE = 32
-SEQ_LEN = BARS * NOTES_PER_BAR
+BARS = 0.5
+BATCH_SIZE = 5
+SEQ_LEN = int(BARS * NOTES_PER_BAR)
 ALLOW_SAVE = False
 
 # Hyper Parameters
-OCTAVE_UNITS = 64
-STYLE_UNITS = 64
-NOTE_UNITS = 2
-
-ENCODER_UNITS = 512
-LATENT_DIM = 10
+ENCODER_UNITS = 64
+ENCODER_UNITS_2 = 64
+ENCODER_UNITS_3 = 32
+LATENT_DIM = 16
 BETA = 1
-EPOCHS = 701
-GENERATE_EVERY_EPOCH = 20
+EPOCHS = 15001
+GENERATE_EVERY_EPOCH = 200
 
 # Move file save location
 OUT_DIR = 'out'
