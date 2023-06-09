@@ -4,10 +4,11 @@ from generate import generate
 import pretty_midi as pm
 from dataset import load_all
 from keras import backend as K
+import matplotlib.pyplot as plt
 tf.get_logger().setLevel('ERROR')
 
 
-def f1(y_true, y_pred):
+def f1_m(y_true, y_pred):
     def recall_m(y_true, y_pred):
         TP = tf.cast(K.sum(K.round(K.clip(y_true * y_pred, 0, 1))), dtype=tf.float32)
         Positives = tf.cast(K.sum(K.round(K.clip(y_true, 0, 1))), dtype=tf.float32)
@@ -52,9 +53,12 @@ def elbo(z_mu, z_rho, decoded_seqs, original_seqs):
     # bce = tf.reduce_mean(bce, axis=0)
     # # print(decoded[0, :5], original)
     # # print("After mean: ", bce)
-    bce = keras.losses.binary_crossentropy(tf.cast(original_seqs, decoded_seqs.dtype), decoded_seqs)
+    bce_loss = tf.keras.losses.BinaryCrossentropy(reduction=tf.keras.losses.Reduction.SUM)
+    bce = bce_loss(tf.cast(original_seqs, decoded_seqs.dtype), decoded_seqs)
+    # print("Bce: ", bce)
     # kl loss
     kl = kl_loss(z_mu, z_rho)
+    # print("KL: ", kl)
 
     return bce, kl
 
@@ -85,6 +89,10 @@ def train_model(latent_dim, epochs, dataset):
     bce_loss_tracker = keras.metrics.Mean(name='bce_loss')
     f1_tracker = keras.metrics.Mean(name='f1')
 
+    bce_metric = []
+    f1_metric = []
+    kl_metric = []
+
     label_list = None
     z_mu_list = None
 
@@ -109,10 +117,10 @@ def train_model(latent_dim, epochs, dataset):
                 loss = bce + BETA * kl
                 # loss = bce
                 # compute F1 score
-                f1_score = f1(seqs, decoded_seqs)
+                f1_score = f1_m(seqs, decoded_seqs)
 
             gradients = tape.gradient(loss, cvae.variables)
-            print(np.mean([tf.reduce_mean(g) for g in gradients]))
+            # print(np.mean([tf.reduce_mean(g) for g in gradients]))
 
             optimizer.apply_gradients(zip(gradients, cvae.variables))
 
@@ -137,6 +145,9 @@ def train_model(latent_dim, epochs, dataset):
         # display metrics at the end of each epoch.
         epoch_kl, epoch_bce, epoch_f1 = kl_loss_tracker.result(), bce_loss_tracker.result(), f1_tracker.result()
         print(f'epoch: {epoch}, bce: {epoch_bce:.4f}, kl_div: {epoch_kl:.4f}, f1: {epoch_f1:.4f}')
+        bce_metric.append(epoch_bce)
+        f1_metric.append(epoch_f1)
+        kl_metric.append(epoch_kl)
 
         if epoch > 0 and epoch % GENERATE_EVERY_EPOCH == 0:
             save_generated_song(cvae, epoch, 8)
@@ -147,13 +158,37 @@ def train_model(latent_dim, epochs, dataset):
         bce_loss_tracker.reset_state()
         f1_tracker.reset_state()
 
-    return cvae, z_mu_list, label_list
+    return cvae, z_mu_list, label_list, bce_metric, f1_metric, kl_metric
 
 
 if __name__ == "__main__":
     print(tf.version.VERSION)
     print(np.version.version)
     data = load_all(styles, BATCH_SIZE, SEQ_LEN)
-    cvae, _, _ = train_model(LATENT_DIM, EPOCHS, data)
-    model_name = "test"
+    cvae, _, _, bce_metric, f1_metric, kl_metric = train_model(LATENT_DIM, EPOCHS, data)
+    model_name = "changelog_2"
     cvae.save('out/models/' + model_name)
+
+    plt.plot(
+        np.linspace(1, EPOCHS, EPOCHS),
+        bce_metric, linewidth=1.0, color="blue"
+    )
+    plt.plot(
+        np.linspace(1, EPOCHS, EPOCHS),
+        kl_metric, linewidth=1.0, color="red"
+    )
+    plt.ylim(top=5)
+    plt.title('Model train loss')
+    plt.xlabel('epoch')
+    plt.ylabel('loss')
+    plt.legend(['bce', 'kl'], loc='upper right')
+    plt.show()
+
+    plt.plot(
+        np.linspace(1, EPOCHS, EPOCHS),
+        f1_metric, linewidth=1.0, color="orange"
+    )
+    plt.title('Model train F1')
+    plt.xlabel('epoch')
+    plt.ylabel('F1')
+    plt.show()
