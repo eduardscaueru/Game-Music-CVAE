@@ -318,13 +318,14 @@ if __name__ == '__main__':
     print(notes_instruments)
 
     df = pd.DataFrame(notes_instruments, columns=['instrument', 'notes'])
-    plt.figure(figsize=(20, 5))
+    plt.figure(figsize=(25, 5))
     sns.barplot(data=df, x='instrument', y='notes')
     plt.title("Instruments based on number of notes")
     plt.show()
-    # piece = pm.PrettyMIDI("data/arcade/mario/Koopa_Bros._Theme.mid")
+
+    # piece = pm.PrettyMIDI("data/arcade/blox/Mussorgsky - Promenade.mid")
     # beats, decoded = midi_decode_v2(piece)
-    # print(beats[1], decoded.shape)
+    # print(decoded.shape)
     # print(decoded[32, 43 * 128:(43 + 1) * 128, 1])
     #p = midi_encode(midi_decode(p))
     #midi.write_midifile("out/test_out.mid", p)

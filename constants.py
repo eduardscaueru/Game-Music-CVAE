@@ -4,37 +4,36 @@ import os
 genre = [
     'action',
     'adventure',
-    'arcade'
-    # 'horror'
+    'arcade',
+    'horror'
 ]
 
 styles = [
     [
         'data/action/batman',
-        'data/action/doom'
+        'data/action/kung_fu'
     ],
     [
         'data/adventure/blade_runner',
-        # 'data/adventure/indiana_jones',
         'data/adventure/myst'
     ],
     [
         'data/arcade/blox',
         'data/arcade/burning_monkey',
         'data/arcade/mario'
+    ],
+    [
+        'data/horror/blood',
+        'data/horror/house_of_the_dead'
     ]
-    # [
-    #     'data/horror/blood',
-    #     'data/horror/house_of_the_dead'
-    # ]
 ]
 
 NUM_STYLES = sum(len(s) for s in styles)
 
-NUM_INSTRUMENTS = 8
+NUM_INSTRUMENTS = 10
 MAX_INSTRUMENTS_PER_SONG = 1
-MAX_INSTRUMENTS_GENERATED = 8
-FS = 8
+MAX_INSTRUMENTS_GENERATED = 10
+FS = 16
 
 # MIDI Resolution
 DEFAULT_RES = 96
@@ -58,23 +57,23 @@ BEATS_PER_BAR = 4
 NOTES_PER_BEAT = 4
 # The quickest note is a half-note
 # NOTES_PER_BAR = NOTES_PER_BEAT * BEATS_PER_BAR
-NOTE_TIME_STEPS = 1
+NOTE_TIME_STEPS = 2
 NOTES_PER_BAR = NOTES_PER_BEAT * BEATS_PER_BAR * NOTE_TIME_STEPS
 
 # Training parameters
-BARS = 0.5
+BARS = 1
 BATCH_SIZE = 32
 SEQ_LEN = int(BARS * NOTES_PER_BAR)
 ALLOW_SAVE = False
 
 # Hyper Parameters
-ENCODER_UNITS = 350
+ENCODER_UNITS = 512
 ENCODER_UNITS_2 = 256
-ENCODER_UNITS_3 = 256
-LATENT_DIM = 128
+ENCODER_UNITS_3 = 128
+LATENT_DIM = 64
 BETA = 0.01
-EPOCHS = 2501
-GENERATE_EVERY_EPOCH = 500
+EPOCHS = 3001
+GENERATE_EVERY_EPOCH = 50000
 
 # Move file save location
 OUT_DIR = 'out'

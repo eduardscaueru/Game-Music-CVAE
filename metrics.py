@@ -13,7 +13,7 @@ def get_all_feature_names():
 
 if __name__ == "__main__":
     features = get_feature_names()
-    print(similarity_matrix(["/home/ediuso/Documents/Licenta/Game-Music-CVAE/data/adventure/myst/MystTheme.mid"],
-                                ["/home/ediuso/Documents/Licenta/Game-Music-CVAE/data/adventure/blade_runner/bladerun.mid",
-                                 "/home/ediuso/Documents/Licenta/Game-Music-CVAE/data/adventure/myst/mystflight.mid",
-                                 "/home/ediuso/Documents/Licenta/Game-Music-CVAE/data/arcade/blox/Bach - Bourree.mid"]))
+    print(similarity_matrix(["/home/ediuso/Documents/Licenta/Game-Music-CVAE/out/generated_doom+burning_monkey_changelog_5.mid",
+                             "/home/ediuso/Documents/Licenta/Game-Music-CVAE/out/generated_doom+burning_monkey_changelog_6.mid"],
+                                ["/home/ediuso/Documents/Licenta/Game-Music-CVAE/data/action/doom/02 - At Doom's Gate (E1M1).mid",
+                                 "/home/ediuso/Documents/Licenta/Game-Music-CVAE/data/arcade/burning_monkey/FilthyTouch.mid"]))

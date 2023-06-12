@@ -1,3 +1,5 @@
+import datetime
+from schedulers import frange_cycle_sigmoid
 from model import *
 from dataset import idx_to_instrument, midi_encode_v2
 from generate import generate
@@ -82,8 +84,13 @@ def train_model(latent_dim, epochs, dataset):
     # print("note_data between", len(note_data[0 < note_data < 1]))
 
     cvae = CVAE(latent_dim)
+    beta_scheduler = frange_cycle_sigmoid(0.0, 1.0, EPOCHS, 4, 1.0)
+    # beta = BETA
     lr = 1.0
     optimizer = keras.optimizers.Adadelta(learning_rate=lr)
+
+    log_dir = os.path.join("out/logs/changelog_9_{}".format(datetime.datetime.now().strftime("%Y%m%d-%H%M%S")))
+    summary_writer = tf.summary.create_file_writer(logdir=log_dir)
 
     kl_loss_tracker = keras.metrics.Mean(name='kl_loss')
     bce_loss_tracker = keras.metrics.Mean(name='bce_loss')
@@ -97,6 +104,7 @@ def train_model(latent_dim, epochs, dataset):
     z_mu_list = None
 
     for epoch in range(epochs):
+        beta = beta_scheduler[epoch]
         label_list = None
         z_mu_list = None
 
@@ -114,7 +122,7 @@ def train_model(latent_dim, epochs, dataset):
                 # compute loss
                 bce, kl = elbo(z_mu, z_rho, decoded_seqs, seqs)
                 # print("sub 0 bce values", len(bce[bce < 0]))
-                loss = bce + BETA * kl
+                loss = bce + beta * kl
                 # loss = bce
                 # compute F1 score
                 f1_score = f1_m(seqs, decoded_seqs)
@@ -124,7 +132,7 @@ def train_model(latent_dim, epochs, dataset):
 
             optimizer.apply_gradients(zip(gradients, cvae.variables))
 
-            kl_loss_tracker.update_state(BETA * kl)
+            kl_loss_tracker.update_state(beta * kl)
             bce_loss_tracker.update_state(bce)
             f1_tracker.update_state(f1_score)
 
@@ -149,6 +157,11 @@ def train_model(latent_dim, epochs, dataset):
         f1_metric.append(epoch_f1)
         kl_metric.append(epoch_kl)
 
+        with summary_writer.as_default():
+            tf.summary.scalar('epoch_bce', epoch_bce, step=optimizer.iterations)
+            tf.summary.scalar('epoch_kl', epoch_kl, step=optimizer.iterations)
+            tf.summary.scalar('epoch_f1', epoch_f1, step=optimizer.iterations)
+
         if epoch > 0 and epoch % GENERATE_EVERY_EPOCH == 0:
             save_generated_song(cvae, epoch, 8)
             # cvae.save('out/models/' + "test" + "_epoch_" + str(epoch))
@@ -166,7 +179,7 @@ if __name__ == "__main__":
     print(np.version.version)
     data = load_all(styles, BATCH_SIZE, SEQ_LEN)
     cvae, _, _, bce_metric, f1_metric, kl_metric = train_model(LATENT_DIM, EPOCHS, data)
-    model_name = "changelog_2"
+    model_name = "changelog_9"
     cvae.save('out/models/' + model_name)
 
     plt.plot(
@@ -177,7 +190,7 @@ if __name__ == "__main__":
         np.linspace(1, EPOCHS, EPOCHS),
         kl_metric, linewidth=1.0, color="red"
     )
-    plt.ylim(top=5)
+    plt.ylim(top=5, bottom=0)
     plt.title('Model train loss')
     plt.xlabel('epoch')
     plt.ylabel('loss')

@@ -14,11 +14,11 @@ def sampling(z_mean, z_std):
 def get_encoder():
     # Embedding layer pentru a reduce dim NUM_NOTES
     inputs = tf.keras.Input(shape=(SEQ_LEN, NUM_NOTES), batch_size=BATCH_SIZE)
-    lstm_output_1 = LSTM(ENCODER_UNITS, return_sequences=True, activation="relu")(inputs)
+    lstm_output_1 = LSTM(ENCODER_UNITS, return_sequences=True)(inputs)
     layer_norm_1 = LayerNormalization()(lstm_output_1)
-    lstm_output_2 = LSTM(ENCODER_UNITS_2, return_sequences=True, activation="relu")(layer_norm_1)
+    lstm_output_2 = LSTM(ENCODER_UNITS_2, return_sequences=True)(layer_norm_1)
     layer_norm_2 = LayerNormalization()(lstm_output_2)
-    lstm_output_3 = LSTM(ENCODER_UNITS_3, activation="relu")(layer_norm_2)
+    lstm_output_3 = LSTM(ENCODER_UNITS_3)(layer_norm_2)
     layer_norm_3 = LayerNormalization()(lstm_output_3)
 
     return keras.Model(inputs=inputs, outputs=[layer_norm_3])
@@ -26,8 +26,8 @@ def get_encoder():
 
 def get_latent(latent_dim):
     inputs = tf.keras.Input(shape=(ENCODER_UNITS_3 + NUM_STYLES,), batch_size=BATCH_SIZE)
-    mu = Dense(units=latent_dim, activation="relu")(inputs)
-    sigma = Dense(units=latent_dim, activation="relu")(inputs)
+    mu = Dense(units=latent_dim)(inputs)
+    sigma = Dense(units=latent_dim)(inputs)
 
     return keras.Model(inputs=inputs, outputs=[mu, sigma])
 
@@ -35,11 +35,11 @@ def get_latent(latent_dim):
 def get_decoder(latent_dim):
     inputs = tf.keras.Input(shape=(latent_dim + NUM_STYLES,), batch_size=BATCH_SIZE)
     repeated_inputs = RepeatVector(SEQ_LEN)(inputs)
-    lstm_outputs_1 = LSTM(ENCODER_UNITS_3, return_sequences=True, activation="relu")(repeated_inputs)
+    lstm_outputs_1 = LSTM(ENCODER_UNITS_3, return_sequences=True)(repeated_inputs)
     layer_norm_1 = LayerNormalization()(lstm_outputs_1)
-    lstm_outputs_2 = LSTM(ENCODER_UNITS_2, return_sequences=True, activation="relu")(layer_norm_1)
+    lstm_outputs_2 = LSTM(ENCODER_UNITS_2, return_sequences=True)(layer_norm_1)
     layer_norm_2 = LayerNormalization()(lstm_outputs_2)
-    lstm_outputs_3 = LSTM(ENCODER_UNITS, return_sequences=True, activation="relu")(layer_norm_2)
+    lstm_outputs_3 = LSTM(ENCODER_UNITS, return_sequences=True)(layer_norm_2)
     layer_norm_3 = LayerNormalization()(lstm_outputs_3)
     lstm_outputs = LSTM(NUM_NOTES, return_sequences=True, activation="sigmoid")(layer_norm_3) # sterge sigmoid ul
     # Dense layer pentru a creste dim la NUM_NOTES
