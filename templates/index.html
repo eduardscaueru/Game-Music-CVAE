@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static',filename='styles/mainpage.css') }}">
+    <script>
+        function submitDatasetForm() {
+            document.getElementById('datasetForm').submit();
+        }
+        function submitTrainForm() {
+            document.getElementById('trainForm').submit();
+        }
+        function submitGenerateForm() {
+            document.getElementById('generateForm').submit();
+        }
+
+        function showContent(contentId, buttonId) {
+            // Get all content elements
+            var contents = document.getElementsByClassName('login-box');
+
+            // Hide all content elements
+            for (var i = 0; i < contents.length; i++) {
+                contents[i].classList.remove('active');
+            }
+
+            // Show the selected content
+            var selectedContent = document.getElementById(contentId);
+            selectedContent.classList.add('active');
+
+            // Get all buttons
+            var buttons = document.getElementsByClassName('switch-button');
+
+            // Remove active class from all buttons
+            for (var i = 0; i < buttons.length; i++) {
+                buttons[i].classList.remove('active-button');
+            }
+
+            // Add active class to the selected button
+            var selectedButton = document.getElementById(buttonId);
+            selectedButton.classList.add('active-button');
+        }
+
+        function addItem () {
+            var hidden_units_input = document.getElementsByName("HIDDEN_UNITS").item(0);
+            var item = document.createElement("li");
+            item.innerHTML = hidden_units_input.value;
+
+            var item = document.createElement("li");
+            item.innerHTML = hidden_units_input.value;
+
+            document.getElementById("hidden-layers").appendChild(item);
+        }
+
+        function delItem() {
+            var list = document.getElementById("hidden-layers");
+            var allItems = document.querySelectorAll("#hidden-layers li");
+
+            var last = allItems.length - 1;
+            list.removeChild(allItems[last]);
+        }
+    </script>
+</head>
+<body>
+<h1>Game Music C-VRAE</h1>
+
+<a id="button1" class="switch-button active-button" onclick="showContent('dataset', 'button1')">Dataset</a>
+<a id="button2" class="switch-button" onclick="showContent('train', 'button2')">Train</a>
+<a id="button3" class="switch-button" onclick="showContent('generate', 'button3')">Generate</a>
+
+<div id="dataset" class="login-box active">
+    <h2>Dataset</h2>
+    <form id="datasetForm" action="/" method='POST'>
+        <div class="row">
+            <div class="user-box" style="padding-right: 10px">
+                <input type="text" name="FS" value="{{freq}}" required="">
+                <label>Frequency</label>
+            </div>
+            <div class="user-box" style="padding-right: 10px">
+                <input type="text" name="INSTRUMENTS_PER_SONG" value="{{ips}}" required="">
+                <label>Instruments per song</label>
+            </div>
+            <div class="user-box">
+                <input type="text" name="MAX_GENERATED_INSTRUMENTS" value="{{mgi}}" required="">
+                <label>Max generated instruments</label>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="user-box" style="padding-right: 10px">
+                <input type="text" name="MIN_NOTE" value="{{min_note}}" required="">
+                <label>Min note</label>
+            </div>
+            <div class="user-box" style="padding-right: 10px">
+                <input type="text" name="MAX_NOTE" value="{{max_note}}" required="">
+                <label>Max note</label>
+            </div>
+            <div class="user-box">
+                <input type="text" name="BEATS_PER_BAR" value="{{beats_per_bar}}" required="">
+                <label>Beats per bar</label>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="user-box" style="padding-right: 10px">
+                <input type="text" name="NOTES_PER_BEAT" value="{{notes_per_beat}}" required="">
+                <label>Notes per beat</label>
+            </div>
+            <div class="user-box" style="padding-right: 10px">
+                <input type="text" name="NOTE_TIME_STEPS" value="{{note_ts}}" required="">
+                <label>Note timesteps</label>
+            </div>
+            <div class="user-box">
+                <input type="text" name="BARS" value="{{bars}}" required="">
+                <label>Bars</label>
+            </div>
+        </div>
+
+        <a href="#" onclick="submitDatasetForm()">
+            <span></span>
+            <span></span>
+            <span></span>
+            <span></span>
+            Submit
+        </a>
+    </form>
+</div>
+
+<div id="train" class="login-box" style="width: 500px">
+    <h2>Train</h2>
+    <form id="trainForm" action="/" method='POST'>
+        <div class="row">
+            <div class="user-box" style="padding-right: 10px">
+                <input type="text" name="BATCH_SIZE" value="{{batch_size}}" required="">
+                <label>Batch size</label>
+            </div>
+            <div class="user-box">
+                <input type="text" name="LATENT_DIM" value="{{latent_dim}}" required="">
+                <label>Latent space dimension</label>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="user-box" style="padding-right: 10px">
+                <input type="text" name="BETA" value="{{beta}}" required="">
+                <label>Beta</label>
+            </div>
+            <div class="user-box">
+                <input type="text" name="EPOCHS" value="{{epochs}}" required="">
+                <label>Epochs</label>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="user-box" style="padding-right: 10px">
+                <input type="text" name="GENERATE_EVERY_EPOCH" value="{{generate_every_epoch}}" required="">
+                <label>Save every epoch</label>
+            </div>
+            <div class="user-box">
+                <input type="text" name="HIDDEN_UNITS" value="{{hidden_units}}" required="">
+                <label>Hidden layers units</label>
+            </div>
+        </div>
+
+        <ol id="hidden-layers" class="items">
+            <li>512</li>
+            <li>256</li>
+        </ol>
+
+        <div class="row">
+            <div style="padding-right: 100px; width: 200px">
+                <a href="#" onclick="addItem()">
+                    Add layer
+                </a>
+            </div>
+
+            <div style="width: 200px">
+                <a href="#" onclick="delItem()">
+                    Remove layer
+                </a>
+            </div>
+        </div>
+
+        <div style="text-align:center;">
+            <a href="#" onclick="submitTrainForm()">
+                <span></span>
+                <span></span>
+                <span></span>
+                <span></span>
+                Train
+            </a>
+        </div>
+    </form>
+</div>
+
+<div id="generate" class="login-box" style="width: 500px">
+    <h2>Generate</h2>
+    <form id="generateForm" action="/" method='POST'>
+        <div class="user-box">
+            <input type="text" name="STRATEGY" value="{{generate_strategy}}" required="">
+            <label>Generate strategy</label>
+        </div>
+
+        <div class="user-box">
+            <input type="text" name="LABELS" value="{{labels}}" required="">
+            <label>Labels</label>
+        </div>
+
+        <a href="#" onclick="submitGenerateForm()">
+            <span></span>
+            <span></span>
+            <span></span>
+            <span></span>
+            Generate
+        </a>
+    </form>
+</div>
+</body>
+</html>
