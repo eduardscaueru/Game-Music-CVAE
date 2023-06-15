@@ -3,17 +3,49 @@
 <head>
     <link rel="stylesheet" type="text/css" href="{{ url_for('static',filename='styles/mainpage.css') }}">
     <script>
+        var lastContext;
+        var lastContextButton;
+
         function submitDatasetForm() {
             document.getElementById('datasetForm').submit();
         }
         function submitTrainForm() {
-            document.getElementById('trainForm').submit();
+            var list = document.getElementById("hidden-layers").children;
+            var inputs = [];
+            for (var i = 0; i < list.length; i++) {
+                var input = document.createElement("input");
+                input.value = list[i].innerHTML;
+                input.name = "layer_" + i;
+                input.hidden = true;
+                inputs.push(input);
+
+                document.getElementById('trainForm').appendChild(input);
+            }
+
+            try {
+                document.getElementById('trainForm').submit();
+            } finally {
+                for (var i = 0; i < list.length; i++) {
+                    document.getElementById('trainForm').removeChild(inputs[i]);
+                }
+            }
         }
         function submitGenerateForm() {
+            var select = document.getElementById("select-model");
+            var input = document.createElement("input");
+            input.value = select.options[select.selectedIndex].innerHTML;
+            input.name = "load_model";
+            input.hidden = true;
+            document.getElementById('generateForm').appendChild(input);
+
             document.getElementById('generateForm').submit();
+
+            document.getElementById('generateForm').removeChild(input);
         }
 
         function showContent(contentId, buttonId) {
+            lastContext = contentId;
+            lastContextButton = buttonId;
             // Get all content elements
             var contents = document.getElementsByClassName('login-box');
 
@@ -40,9 +72,7 @@
         }
 
         function addItem () {
-            var hidden_units_input = document.getElementsByName("HIDDEN_UNITS").item(0);
-            var item = document.createElement("li");
-            item.innerHTML = hidden_units_input.value;
+            var hidden_units_input = document.getElementsByName("hidden_units").item(0);
 
             var item = document.createElement("li");
             item.innerHTML = hidden_units_input.value;
@@ -57,6 +87,10 @@
             var last = allItems.length - 1;
             list.removeChild(allItems[last]);
         }
+
+        function getNumInstruments() {
+
+        }
     </script>
 </head>
 <body>
@@ -68,101 +102,128 @@
 
 <div id="dataset" class="login-box active">
     <h2>Dataset</h2>
-    <form id="datasetForm" action="/" method='POST'>
+    <form id="datasetForm" action="/dataset" method='POST'>
         <div class="row">
             <div class="user-box" style="padding-right: 10px">
-                <input type="text" name="FS" value="{{freq}}" required="">
+                <input type="text" name="freq" value="{{config.freq}}" required="">
                 <label>Frequency</label>
             </div>
             <div class="user-box" style="padding-right: 10px">
-                <input type="text" name="INSTRUMENTS_PER_SONG" value="{{ips}}" required="">
+                <input type="text" name="ips" value="{{config.ips}}" required="">
                 <label>Instruments per song</label>
             </div>
             <div class="user-box">
-                <input type="text" name="MAX_GENERATED_INSTRUMENTS" value="{{mgi}}" required="">
-                <label>Max generated instruments</label>
-            </div>
-        </div>
-
-        <div class="row">
-            <div class="user-box" style="padding-right: 10px">
-                <input type="text" name="MIN_NOTE" value="{{min_note}}" required="">
+                <input type="text" name="min_note" value="{{config.min_note}}" required="">
                 <label>Min note</label>
             </div>
+        </div>
+
+        <div class="row">
             <div class="user-box" style="padding-right: 10px">
-                <input type="text" name="MAX_NOTE" value="{{max_note}}" required="">
+                <input type="text" name="max_note" value="{{config.max_note}}" required="">
                 <label>Max note</label>
             </div>
-            <div class="user-box">
-                <input type="text" name="BEATS_PER_BAR" value="{{beats_per_bar}}" required="">
+            <div class="user-box" style="padding-right: 10px">
+                <input type="text" name="beats_per_bar" value="{{config.beats_per_bar}}" required="">
                 <label>Beats per bar</label>
+            </div>
+            <div class="user-box">
+                <input type="text" name="notes_per_beat" value="{{config.notes_per_beat}}" required="">
+                <label>Notes per beat</label>
             </div>
         </div>
 
         <div class="row">
             <div class="user-box" style="padding-right: 10px">
-                <input type="text" name="NOTES_PER_BEAT" value="{{notes_per_beat}}" required="">
-                <label>Notes per beat</label>
-            </div>
-            <div class="user-box" style="padding-right: 10px">
-                <input type="text" name="NOTE_TIME_STEPS" value="{{note_ts}}" required="">
+                <input type="text" name="note_ts" value="{{config.note_ts}}" required="">
                 <label>Note timesteps</label>
             </div>
-            <div class="user-box">
-                <input type="text" name="BARS" value="{{bars}}" required="">
+            <div class="user-box" style="padding-right: 10px">
+                <input type="text" name="bars" value="{{config.bars}}" required="">
                 <label>Bars</label>
+            </div>
+            <div class="user-box">
+                <input type="text" name="ni" value="{{config.ni}}" required="" readonly>
+                <label>Number of instruments</label>
             </div>
         </div>
 
-        <a href="#" onclick="submitDatasetForm()">
-            <span></span>
-            <span></span>
-            <span></span>
-            <span></span>
-            Submit
-        </a>
+        <div class="row">
+            <div>
+                <a href="#" onclick="submitDatasetForm()">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                    Submit
+                </a>
+            </div>
+
+            <div class="user-box" style="padding-left: 70px; padding-top: 30px">
+                <input style="padding-left: 70px; padding-top: 30px; width: 100px" type="text" name="data_shape" value="{{data_shape}}" required="" readonly>
+                <label style="padding-left: 70px; padding-top: 60px">Data shape</label>
+            </div>
+
+            <div style="padding-left: 50px; width: 200px">
+                <a href="#" onclick="getNumInstruments()">
+                    Get num instruments
+                </a>
+            </div>
+        </div>
     </form>
 </div>
 
 <div id="train" class="login-box" style="width: 500px">
     <h2>Train</h2>
-    <form id="trainForm" action="/" method='POST'>
+    <form id="trainForm" action="/train" method='POST'>
         <div class="row">
             <div class="user-box" style="padding-right: 10px">
-                <input type="text" name="BATCH_SIZE" value="{{batch_size}}" required="">
+                <input type="text" name="batch_size" value="{{config.batch_size}}" required="">
                 <label>Batch size</label>
             </div>
             <div class="user-box">
-                <input type="text" name="LATENT_DIM" value="{{latent_dim}}" required="">
+                <input type="text" name="latent_dim" value="{{config.latent_dim}}" required="">
                 <label>Latent space dimension</label>
             </div>
         </div>
 
         <div class="row">
             <div class="user-box" style="padding-right: 10px">
-                <input type="text" name="BETA" value="{{beta}}" required="">
+                <input type="text" name="beta" value="{{config.beta}}" required="">
                 <label>Beta</label>
             </div>
             <div class="user-box">
-                <input type="text" name="EPOCHS" value="{{epochs}}" required="">
+                <input type="text" name="epochs" value="{{config.epochs}}" required="">
                 <label>Epochs</label>
             </div>
         </div>
 
         <div class="row">
             <div class="user-box" style="padding-right: 10px">
-                <input type="text" name="GENERATE_EVERY_EPOCH" value="{{generate_every_epoch}}" required="">
+                <input type="text" name="generate_every_epoch" value="{{config.generate_every_epoch}}" required="">
                 <label>Save every epoch</label>
             </div>
             <div class="user-box">
-                <input type="text" name="HIDDEN_UNITS" value="{{hidden_units}}" required="">
+                <input type="text" name="num_instruments" value="{{num_instruments}}" required="">
+                <label>Number of instruments</label>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="user-box" style="padding-right: 10px">
+                <input type="text" name="name" value="{{config.name}}" required="">
+                <label>Name</label>
+            </div>
+            <div class="user-box">
+                <input type="text" name="hidden_units" value="{{hidden_units}}" required="">
                 <label>Hidden layers units</label>
             </div>
         </div>
 
         <ol id="hidden-layers" class="items">
-            <li>512</li>
-            <li>256</li>
+            {% for item in hidden_layers %}
+                <li>{{item}}</li>
+            {% endfor %}
         </ol>
 
         <div class="row">
@@ -193,14 +254,31 @@
 
 <div id="generate" class="login-box" style="width: 500px">
     <h2>Generate</h2>
-    <form id="generateForm" action="/" method='POST'>
+    <form id="generateForm" action="/generate" method='POST'>
+        <div class="select">
+            <select id="select-model" class="select-text" required>
+                <option value="" disabled selected></option>
+                {% for item in saved_models %}
+                    <option value={{item.value}}>{{item.name}}</option>
+                {% endfor %}
+            </select>
+            <span class="select-highlight"></span>
+            <span class="select-bar"></span>
+            <label class="select-label">Select model</label>
+        </div>
+
         <div class="user-box">
-            <input type="text" name="STRATEGY" value="{{generate_strategy}}" required="">
+            <input type="text" name="mgi" value="{{config.mgi}}" required="">
+            <label>Max generated instruments</label>
+        </div>
+
+        <div class="user-box">
+            <input type="text" name="generate_strategy" value="{{config.generate_strategy}}" required="">
             <label>Generate strategy</label>
         </div>
 
         <div class="user-box">
-            <input type="text" name="LABELS" value="{{labels}}" required="">
+            <input type="text" name="labels" value="{{config.labels}}" required="">
             <label>Labels</label>
         </div>
 
