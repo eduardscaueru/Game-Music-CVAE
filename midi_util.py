@@ -15,14 +15,14 @@ import matplotlib.pyplot as plt
 import pandas as pd
 
 
-def load_midi_v2(fname):
+def load_midi_v2(fname, instrument_to_idx, fs):
 
     print(fname)
     p = pm.PrettyMIDI(fname)
     cache_path = os.path.join(CACHE_DIR, fname + '.npy')
     os.makedirs(os.path.dirname(cache_path), exist_ok=True)
 
-    note_seq = midi_decode_v2(p)
+    note_seq = midi_decode_v2(p, instrument_to_idx, fs=fs)
 
     return note_seq
 
@@ -79,8 +79,7 @@ def midi_encode_v2(piano_roll, program=16):
     return encoded
 
 
-def midi_decode_v2(p):
-
+def midi_decode_v2(p, instrument_to_idx, fs=FS):
     # Compute piano rolls for every instrument
     # Remove duplicated instruments and keep only the one with max notes length
     instruments = {}
@@ -98,9 +97,9 @@ def midi_decode_v2(p):
         # print(pm.program_to_instrument_name(instrument.program), instrument.is_drum,
         #       instrument.get_piano_roll(FS).shape)
         if instrument.is_drum:
-            piano_rolls.append([instrument, compute_drum_piano_roll(instrument, instrument.get_piano_roll(FS), FS)])
+            piano_rolls.append([instrument, compute_drum_piano_roll(instrument, instrument.get_piano_roll(fs), fs)])
         else:
-            piano_rolls.append([instrument, instrument.get_piano_roll(FS)])
+            piano_rolls.append([instrument, instrument.get_piano_roll(fs)])
 
     # Pad the smaller piano rolls with zeros so that all instruments have the same time_steps
     pitches, max_time_steps = sorted([piano_roll[1].shape for piano_roll in piano_rolls], key=lambda x: -x[1])[0]
@@ -239,7 +238,7 @@ def sum_dictionaries(a, b):
     return d
 
 
-def limit_instruments():
+def limit_instruments(max_instruments_per_song=MAX_INSTRUMENTS_PER_SONG):
     instrument_freq = {}
     for i, style_folders in enumerate(styles):
         for style_folder in style_folders:
@@ -273,7 +272,7 @@ def limit_instruments():
                         notes_freq_per_song[genre[i]][game] = note_freq
 
                     sorted_instruments_by_notes = sorted([(len(x.notes), x.program) for x in song.instruments if not x.is_drum],
-                                                         key=lambda x: x[0], reverse=True)[:MAX_INSTRUMENTS_PER_SONG]
+                                                         key=lambda x: x[0], reverse=True)[:max_instruments_per_song]
                     _, programs = unzip(sorted_instruments_by_notes)
                     for program in programs:
                         if program not in instrument_freq:
@@ -289,11 +288,10 @@ def limit_instruments():
     return dict(program_to_idx)
 
 
-instrument_to_idx = limit_instruments()
-idx_to_instrument = {v: k for k, v in instrument_to_idx.items()}
-
 if __name__ == '__main__':
     # Test
+    instrument_to_idx = limit_instruments()
+    idx_to_instrument = {v: k for k, v in instrument_to_idx.items()}
     # pp = mido.MidiFile("out/test_in.mid")
     # midi_decode_v1(pp)
     print("INTRUMENT to IDX:", instrument_to_idx)

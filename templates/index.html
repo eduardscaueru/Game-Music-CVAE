@@ -89,7 +89,16 @@
         }
 
         function getNumInstruments() {
+            var input = document.createElement("input");
+            input.value = "true";
+            input.name = "get_num_instruments";
+            input.hidden = true;
 
+            document.getElementById('datasetForm').appendChild(input);
+
+            document.getElementById('datasetForm').submit();
+
+            document.getElementById('datasetForm').removeChild(input);
         }
     </script>
 </head>
@@ -143,7 +152,7 @@
                 <label>Bars</label>
             </div>
             <div class="user-box">
-                <input type="text" name="ni" value="{{config.ni}}" required="" readonly>
+                <input type="text" name="num_instruments" value="{{config.num_instruments}}" required="">
                 <label>Number of instruments</label>
             </div>
         </div>
@@ -160,7 +169,7 @@
             </div>
 
             <div class="user-box" style="padding-left: 70px; padding-top: 30px">
-                <input style="padding-left: 70px; padding-top: 30px; width: 100px" type="text" name="data_shape" value="{{data_shape}}" required="" readonly>
+                <input style="padding-left: 70px; padding-top: 30px; width: 100px; text-align: left;" type="text" name="data_shape" value="{{config.data_shape}}" required="">
                 <label style="padding-left: 70px; padding-top: 60px">Data shape</label>
             </div>
 
@@ -200,24 +209,29 @@
 
         <div class="row">
             <div class="user-box" style="padding-right: 10px">
-                <input type="text" name="generate_every_epoch" value="{{config.generate_every_epoch}}" required="">
-                <label>Save every epoch</label>
+                <input type="text" name="learning_rate" value="{{config.learning_rate}}" required="">
+                <label>Learning rate</label>
             </div>
             <div class="user-box">
-                <input type="text" name="num_instruments" value="{{num_instruments}}" required="">
-                <label>Number of instruments</label>
+                <input type="text" name="optimizer" value="{{config.optimizer}}" required="">
+                <label>Optimizer</label>
             </div>
         </div>
 
         <div class="row">
             <div class="user-box" style="padding-right: 10px">
+                <input type="text" name="generate_every_epoch" value="{{config.generate_every_epoch}}" required="">
+                <label>Save every epoch</label>
+            </div>
+            <div class="user-box">
                 <input type="text" name="name" value="{{config.name}}" required="">
                 <label>Name</label>
             </div>
-            <div class="user-box">
-                <input type="text" name="hidden_units" value="{{hidden_units}}" required="">
-                <label>Hidden layers units</label>
-            </div>
+        </div>
+
+        <div class="user-box">
+            <input type="text" name="hidden_units" value="{{hidden_units}}" required="">
+            <label>Hidden layers units</label>
         </div>
 
         <ol id="hidden-layers" class="items">

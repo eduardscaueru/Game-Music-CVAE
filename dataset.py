@@ -51,7 +51,8 @@ def stagger(data, time_steps):
     return dataX, dataY
 
 
-def load_all(styles, batch_size, time_steps):
+def load_all(styles, time_steps, instrument_to_idx, min_note=MIN_NOTE, max_note=MAX_NOTE,
+                        instruments_per_song=MAX_INSTRUMENTS_PER_SONG, fs=FS, num_instruments=NUM_INSTRUMENTS):
     """
     Loads all MIDI files as a piano roll.
     (For Keras)
@@ -68,13 +69,13 @@ def load_all(styles, batch_size, time_steps):
     for style_id, style in enumerate(styles):
         style_hot = one_hot(style_id, NUM_STYLES)
         # Parallel process all files into a list of music sequences
-        seqs = Parallel(n_jobs=multiprocessing.cpu_count(), backend='threading')(delayed(load_midi_v2)(f) for f in get_all_files([style]))
+        seqs = Parallel(n_jobs=multiprocessing.cpu_count(), backend='threading')(delayed(load_midi_v2)(f, instrument_to_idx, fs) for f in get_all_files([style]))
 
         for seq in seqs:
             pm_beats, seq = seq
             if len(seq) >= time_steps:
                 # Clamp MIDI to note range
-                seq = clamp_midi(seq)
+                seq = clamp_midi(seq, min_note=min_note, max_note=max_note, num_instruments=num_instruments)
                 # Create training data and labels
                 train_data, label_data = stagger(seq, time_steps)
 
@@ -104,14 +105,15 @@ def load_all(styles, batch_size, time_steps):
     return [note_data, note_target, beat_data, style_data], [note_target]
 
 
-def clamp_midi(sequence):
+def clamp_midi(sequence, min_note=MIN_NOTE, max_note=MAX_NOTE, num_instruments=NUM_INSTRUMENTS):
     """
     Clamps the midi base on the MIN and MAX notes
     """
-    new_seq = np.zeros((sequence.shape[0], NUM_NOTES_INSTRUMENT * (NUM_INSTRUMENTS + 1)))
-    for i in range(NUM_INSTRUMENTS + 1):
+    num_notes_instrument = max_note - min_note + 1
+    new_seq = np.zeros((sequence.shape[0], num_notes_instrument * (num_instruments + 1)))
+    for i in range(num_instruments + 1):
         # print(i, i * diff, (i + 1) * diff, MIDI_MAX_NOTES * i + MIN_NOTE, MIDI_MAX_NOTES * i + MAX_NOTE)
-        new_seq[:, i * NUM_NOTES_INSTRUMENT:(i + 1) * NUM_NOTES_INSTRUMENT] = sequence[:, MIDI_MAX_NOTES * i + MIN_NOTE:MIDI_MAX_NOTES * i + MAX_NOTE + 1]
+        new_seq[:, i * num_notes_instrument:(i + 1) * num_notes_instrument] = sequence[:, MIDI_MAX_NOTES * i + min_note:MIDI_MAX_NOTES * i + max_note + 1]
     # print(new_seq.shape)
     return new_seq
 
@@ -127,7 +129,8 @@ def unclamp_midi(sequence):
 
 
 if __name__ == "__main__":
-    data = load_all(styles, BATCH_SIZE, SEQ_LEN)
+    instrument_to_idx = limit_instruments()
+    data = load_all(styles, SEQ_LEN, instrument_to_idx)
     # print(data[0][3][0, 60])
     print(data[0][3].shape)
     print(data[0][0].shape)

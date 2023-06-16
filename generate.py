@@ -4,7 +4,7 @@ from constants import *
 import numpy as np
 import tensorflow as tf
 import pretty_midi as pm
-from midi_util import midi_encode_v2, idx_to_instrument
+from midi_util import midi_encode_v2, limit_instruments
 
 
 def decoder_predict(cvae, length, style_label):
@@ -32,7 +32,7 @@ def select_note(instrument_seq, strategy="GREEDY"):
     return 0
 
 
-def separate_instruments(generated):
+def separate_instruments(generated, threshold=1e-5):
     t = 0
     final = np.zeros(
         (NUM_INSTRUMENTS + 1, generated.shape[0] * generated.shape[1], NUM_NOTES_INSTRUMENT))
@@ -44,11 +44,11 @@ def separate_instruments(generated):
                 instrument_seq = generated[bars, time_step, i * NUM_NOTES_INSTRUMENT:(i + 1) * NUM_NOTES_INSTRUMENT]
                 selected_notes_idx = select_note(instrument_seq, strategy="GREEDY")
                 max_prob = np.max(instrument_seq)
+                if max_prob >= threshold:
+                    instrument_max_probs[i] += max_prob
 
-                instrument_max_probs[i] += max_prob
-
-                for selected_note_idx in selected_notes_idx:
-                    final[i, t, selected_note_idx] = 1
+                    for selected_note_idx in selected_notes_idx:
+                        final[i, t, selected_note_idx] = 1
             t += 1
 
     final.tofile('out/generated.dat')
@@ -86,7 +86,8 @@ def generate(cvae, length, label):
 
 if __name__ == "__main__":
     # pass
-    data = load_all(styles, BATCH_SIZE, SEQ_LEN)
+    instrument_to_idx = limit_instruments()
+    data = load_all(styles, SEQ_LEN, instrument_to_idx)
     # model, _, _ = train_model(LATENT_DIM, EPOCHS, data)
     model_name = 'changelog_8'
     model = tf.keras.models.load_model('out/models/' + model_name)

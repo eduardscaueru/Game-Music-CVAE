@@ -1,12 +1,12 @@
 import datetime
-from schedulers import frange_cycle_sigmoid
+from schedulers import frange_cycle_sigmoid, frange_cycle_cosine, frange_cycle_linear
 from model import *
-from dataset import idx_to_instrument, midi_encode_v2
 from generate import generate
 import pretty_midi as pm
 from dataset import load_all
 from keras import backend as K
 import matplotlib.pyplot as plt
+from midi_util import limit_instruments
 tf.get_logger().setLevel('ERROR')
 
 
@@ -74,7 +74,10 @@ def save_generated_song(model, epoch, length):
     pm_song.write("out/generated_test_epoch_" + str(epoch) + ".mid")
 
 
-def train_model(latent_dim, epochs, dataset):
+def train_model(dataset, hidden_layers, latent_dim=LATENT_DIM, epochs=EPOCHS, batch_size=BATCH_SIZE, name="test",
+                generate_every_epoch=GENERATE_EVERY_EPOCH,
+                beta_strategy=BETA, learning_rate=0.001, keras_optimizer="adadelta",
+                seq_len=SEQ_LEN, num_notes=NUM_NOTES):
     note_data = dataset[0][0]
     note_target = dataset[0][1]
     style_data = dataset[0][3]
@@ -83,13 +86,25 @@ def train_model(latent_dim, epochs, dataset):
     print("style shape", style_data.shape)
     # print("note_data between", len(note_data[0 < note_data < 1]))
 
-    cvae = CVAE(latent_dim)
-    beta_scheduler = frange_cycle_sigmoid(0.0, 1.0, EPOCHS, 4, 1.0)
-    # beta = BETA
-    lr = 1.0
-    optimizer = keras.optimizers.Adadelta(learning_rate=lr)
+    cvae = CVAE(latent_dim, hidden_layers, batch_size=batch_size, seq_len=seq_len, num_notes=num_notes)
 
-    log_dir = os.path.join("out/logs/changelog_9_{}".format(datetime.datetime.now().strftime("%Y%m%d-%H%M%S")))
+    beta_scheduler = None
+    if type(beta_strategy) == float:
+        beta_scheduler = np.ones(epochs) * beta_strategy
+    elif beta_strategy == "sigmoid":
+        beta_scheduler = frange_cycle_sigmoid(0.0, 1.0, epochs, 4, 1.0)
+    elif beta_strategy == "cosine":
+        beta_scheduler = frange_cycle_cosine(0.0, 1.0, epochs, 4, 1.0)
+    else:
+        beta_scheduler = frange_cycle_linear(0.0, 1.0, epochs, 4, 1.0)
+
+    optimizer = None
+    if keras_optimizer == "adadelta":
+        optimizer = keras.optimizers.Adadelta(learning_rate=learning_rate)
+    else:
+        optimizer = keras.optimizers.Adam(learning_rate=learning_rate)
+
+    log_dir = os.path.join("out/logs/{}_{}".format(name, datetime.datetime.now().strftime("%Y%m%d-%H%M%S")))
     summary_writer = tf.summary.create_file_writer(logdir=log_dir)
 
     kl_loss_tracker = keras.metrics.Mean(name='kl_loss')
@@ -108,15 +123,15 @@ def train_model(latent_dim, epochs, dataset):
         label_list = None
         z_mu_list = None
 
-        for start_batch in np.arange(0, num_seqs - num_seqs % BATCH_SIZE, BATCH_SIZE):
+        for start_batch in np.arange(0, num_seqs - num_seqs % batch_size, batch_size):
             with tf.GradientTape() as tape:
-                seqs = note_data[start_batch:start_batch + BATCH_SIZE, :, :]
+                seqs = note_data[start_batch:start_batch + batch_size, :, :]
                 # target_seqs = note_target[start_batch:start_batch + BATCH_SIZE, :, :]
-                style_labels = style_data[start_batch:start_batch + BATCH_SIZE, 1, :]
+                style_labels = style_data[start_batch:start_batch + batch_size, 1, :]
 
                 # forward pass
                 z_mu, z_rho, decoded_seqs = cvae(seqs, style_labels)
-                if epoch == EPOCHS - 1:
+                if epoch == epochs - 1:
                     print(decoded_seqs[0, 0, :])
 
                 # compute loss
@@ -162,9 +177,9 @@ def train_model(latent_dim, epochs, dataset):
             tf.summary.scalar('epoch_kl', epoch_kl, step=optimizer.iterations)
             tf.summary.scalar('epoch_f1', epoch_f1, step=optimizer.iterations)
 
-        if epoch > 0 and epoch % GENERATE_EVERY_EPOCH == 0:
-            save_generated_song(cvae, epoch, 8)
-            # cvae.save('out/models/' + "test" + "_epoch_" + str(epoch))
+        if epoch > 0 and epoch % generate_every_epoch == 0:
+            # save_generated_song(cvae, epoch, 4)
+            cvae.save('out/models/' + name + "_epoch_" + str(epoch))
 
         # reset metric states
         kl_loss_tracker.reset_state()
@@ -177,9 +192,10 @@ def train_model(latent_dim, epochs, dataset):
 if __name__ == "__main__":
     print(tf.version.VERSION)
     print(np.version.version)
-    data = load_all(styles, BATCH_SIZE, SEQ_LEN)
-    cvae, _, _, bce_metric, f1_metric, kl_metric = train_model(LATENT_DIM, EPOCHS, data)
-    model_name = "changelog_9"
+    instrument_to_idx = limit_instruments()
+    data = load_all(styles, SEQ_LEN, instrument_to_idx)
+    cvae, _, _, bce_metric, f1_metric, kl_metric = train_model(data)
+    model_name = "changelog_10"
     cvae.save('out/models/' + model_name)
 
     plt.plot(
