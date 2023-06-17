@@ -7,6 +7,7 @@ from dataset import load_all
 from keras import backend as K
 import matplotlib.pyplot as plt
 from midi_util import limit_instruments
+from sklearn.utils import shuffle
 tf.get_logger().setLevel('ERROR')
 
 
@@ -82,6 +83,8 @@ def train_model(dataset, hidden_layers, latent_dim=LATENT_DIM, epochs=EPOCHS, ba
     note_target = dataset[0][1]
     style_data = dataset[0][3]
     num_seqs = note_data.shape[0]
+
+    note_data, style_data = shuffle(note_data, style_data, random_state=42)
     print("note shape", note_data.shape)
     print("style shape", style_data.shape)
     # print("note_data between", len(note_data[0 < note_data < 1]))
