@@ -76,7 +76,7 @@ def save_generated_song(model, epoch, length):
 
 def train_model(dataset, hidden_layers, latent_dim=LATENT_DIM, epochs=EPOCHS, batch_size=BATCH_SIZE, name="test",
                 generate_every_epoch=GENERATE_EVERY_EPOCH,
-                beta_strategy=BETA, learning_rate=0.001, keras_optimizer="adadelta",
+                beta_strategy=BETA, learning_rate=1.0, keras_optimizer="adadelta",
                 seq_len=SEQ_LEN, num_notes=NUM_NOTES):
     note_data = dataset[0][0]
     note_target = dataset[0][1]
@@ -194,8 +194,8 @@ if __name__ == "__main__":
     print(np.version.version)
     instrument_to_idx = limit_instruments()
     data = load_all(styles, SEQ_LEN, instrument_to_idx)
-    cvae, _, _, bce_metric, f1_metric, kl_metric = train_model(data)
-    model_name = "changelog_10"
+    model_name = "changelog_11"
+    cvae, _, _, bce_metric, f1_metric, kl_metric = train_model(data, [512, 256, 128, 64], name=model_name)
     cvae.save('out/models/' + model_name)
 
     plt.plot(

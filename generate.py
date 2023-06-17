@@ -23,16 +23,14 @@ def decoder_predict(cvae, length, style_label):
 def select_note(instrument_seq, strategy="GREEDY"):
     if strategy == "GREEDY":
         return [np.argmax(instrument_seq)]
-    elif strategy == "RANDOM":
-        softmax_seq = tf.nn.softmax(instrument_seq)
-        selected_idx = np.random.choice(instrument_seq.shape[0], 1, p=softmax_seq)
 
-        return selected_idx
+    softmax_seq = tf.nn.softmax(instrument_seq)
+    selected_idx = np.random.choice(instrument_seq.shape[0], 1, p=softmax_seq)
 
-    return 0
+    return selected_idx
 
 
-def separate_instruments(generated, threshold=1e-5):
+def separate_instruments(generated, idx_to_instrument, strategy, threshold=1e-2):
     t = 0
     final = np.zeros(
         (NUM_INSTRUMENTS + 1, generated.shape[0] * generated.shape[1], NUM_NOTES_INSTRUMENT))
@@ -42,7 +40,7 @@ def separate_instruments(generated, threshold=1e-5):
         for time_step in range(generated.shape[1]):
             for i in range(NUM_INSTRUMENTS + 1):
                 instrument_seq = generated[bars, time_step, i * NUM_NOTES_INSTRUMENT:(i + 1) * NUM_NOTES_INSTRUMENT]
-                selected_notes_idx = select_note(instrument_seq, strategy="GREEDY")
+                selected_notes_idx = select_note(instrument_seq, strategy=strategy)
                 max_prob = np.max(instrument_seq)
                 if max_prob >= threshold:
                     instrument_max_probs[i] += max_prob
@@ -61,13 +59,13 @@ def separate_instruments(generated, threshold=1e-5):
     return selected_instruments
 
 
-def generate(cvae, length, label):
+def generate(cvae, length, label, idx_to_instrument, strategy):
     generated = decoder_predict(cvae, length, label)
     print(np.max(generated))
     print(len(generated[generated > 0.1]))
     print(generated.shape)
 
-    selected_instruments = separate_instruments(generated)
+    selected_instruments = separate_instruments(generated, idx_to_instrument, strategy)
 
     # selected_instruments = []
     # for instrument_idx in range(NUM_INSTRUMENTS + 1):
@@ -87,18 +85,18 @@ def generate(cvae, length, label):
 if __name__ == "__main__":
     # pass
     instrument_to_idx = limit_instruments()
+    idx_to_instrument = {v: k for k, v in instrument_to_idx.items()}
     data = load_all(styles, SEQ_LEN, instrument_to_idx)
     # model, _, _ = train_model(LATENT_DIM, EPOCHS, data)
-    model_name = 'changelog_8'
+    model_name = 'changelog_10_epoch_4000'
     model = tf.keras.models.load_model('out/models/' + model_name)
     model.summary()
     label = np.zeros((1, NUM_STYLES))
-    label[:, 1] = 0.5
-    label[:, 5] = 0.5
-    pm_song = generate(model, 4, label)
-    f = open("out/generated_kung_fu+burning_monkey_changelog_8_greedy.mid", "w")
+    label[:, 4] = 1
+    pm_song = generate(model, 4, label, idx_to_instrument, "GREEDY")
+    f = open("out/generated_blox_changelog_10_epoch_4000_greedy.mid", "w")
     f.close()
-    pm_song.write("out/generated_kung_fu+burning_monkey_changelog_8_greedy.mid")
+    pm_song.write("out/generated_blox_changelog_10_epoch_4000_greedy.mid")
     # generated = generate_song(model, 6, label)
     # print(np.max(generated))
     # print(len(generated[generated > 0.1]))

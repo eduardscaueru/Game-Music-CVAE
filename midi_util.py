@@ -247,6 +247,7 @@ def limit_instruments(max_instruments_per_song=MAX_INSTRUMENTS_PER_SONG):
                     midi_file_name = os.path.join(root, name)
                     song = pm.PrettyMIDI(midi_file_name)
                     note_freq = {}
+                    # print(name, sorted([(x.program, len(x.notes)) for x in song.instruments if not x.is_drum], key=lambda x: (x[1], -x[0]), reverse=True))
                     for instrument in song.instruments:
                         # Compute len notes
                         if instrument.is_drum:
