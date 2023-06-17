@@ -1,0 +1,177 @@
+1. Modelul face overfit pe blade runner cu F1 de 0.93 dupa vreo 500 epoci cu urmatoarea configuratie:
+ENCODER_UNITS = 128
+ENCODER_UNITS_2 = 64
+# ENCODER_UNITS_3 = 512
+LATENT_DIM = 32
+BARS = 0.5
+BATCH_SIZE = 4
+FS = 16
+NUM_INSTRUMENTS = 1
+MAX_INSTRUMENTS_PER_SONG = 2
++ Layer normalization
+
+2. F1 de >93 dupa 2000 epoci pe tot dataset ul fara horror si fara indiana jones cu urmatoarea configuratie:
+ENCODER_UNITS = 350
+ENCODER_UNITS_2 = 256
+ENCODER_UNITS_3 = 256
+LATENT_DIM = 128
+BETA = 0.01
+EPOCHS = 15001
+BARS = 0.5
+BATCH_SIZE = 32
+FS = 8
+NUM_INSTRUMENTS = 8
+MAX_INSTRUMENTS_PER_SONG = 1
+MAX_INSTRUMENTS_GENERATED = 3
+lr = 1.0
+optimizer = keras.optimizers.Adadelta(learning_rate=lr)
+
+3. F1 de >99 dupa 1600 epoci pe tot dataset ul fara horror si fara indiana jones cu urmatoarea configuratie:
+ENCODER_UNITS = 350
+ENCODER_UNITS_2 = 256
+ENCODER_UNITS_3 = 256
+LATENT_DIM = 128
+BETA = 0.01
+EPOCHS = 2501
+BARS = 0.5
+BATCH_SIZE = 32
+FS = 16
+NUM_INSTRUMENTS = 8
+MAX_INSTRUMENTS_PER_SONG = 1
+MAX_INSTRUMENTS_GENERATED = 3
+lr = 1.0
+optimizer = keras.optimizers.Adadelta(learning_rate=lr)
+
+4. F1 de >96 dupa 1000 epoci pe tot dataset ul fara indiana jones cu urmatoarea configuratie:
+ENCODER_UNITS = 512
+ENCODER_UNITS_2 = 256
+ENCODER_UNITS_3 = 256
+LATENT_DIM = 128
+BETA = 0.01
+EPOCHS = 2501
+BARS = 0.5
+BATCH_SIZE = 32
+FS = 16
+NUM_INSTRUMENTS = 10
+MAX_INSTRUMENTS_PER_SONG = 1
+MAX_INSTRUMENTS_GENERATED = 3
+lr = 1.0
+optimizer = keras.optimizers.Adadelta(learning_rate=lr)
+
+5. F1 de >96 dupa 1800 epoci pe tot dataset ul fara indiana jones cu urmatoarea configuratie:
+ENCODER_UNITS = 512
+ENCODER_UNITS_2 = 256
+ENCODER_UNITS_3 = 256
+LATENT_DIM = 128
+BETA = 0.01
+EPOCHS = 2501
+BARS = 1
+BATCH_SIZE = 32
+FS = 16
+NUM_INSTRUMENTS = 10
+MAX_INSTRUMENTS_PER_SONG = 1
+MAX_INSTRUMENTS_GENERATED = 3
+lr = 1.0
+optimizer = keras.optimizers.Adadelta(learning_rate=lr)
+
+6. F1 de >... dupa ... epoci pe tot dataset ul fara indiana jones cu urmatoarea configuratie:
+ENCODER_UNITS = 512
+ENCODER_UNITS_2 = 256
+ENCODER_UNITS_3 = 256
+LATENT_DIM = 128
+BETA = 5.25 (tot nu converge dar cica trebuie ca BETA sa fie N/M (https://qr.ae/pyFFxM) (0.1 converge greu)
+Daca beta nu exista atunci modelul cica va invata o melodie/output pentru toate exemplele din spatiul latent. Dar aici (https://stackoverflow.com/questions/71692032/vae-reconstruction-loss-mse-not-decreasing-but-kl-divergence-is) zice ca BETA e 1 si poate fi si mai mic dar atunci nu mai poti avea disentangled latent space.
+EPOCHS = 6001
+BARS = 1
+BATCH_SIZE = 32
+FS = 16
+NUM_INSTRUMENTS = 10
+MAX_INSTRUMENTS_PER_SONG = 1
+MAX_INSTRUMENTS_GENERATED = 3
+lr = 1.0
+optimizer = keras.optimizers.Adadelta(learning_rate=lr)
+
+7. F1 de >80 dupa 1700 epoci, dar dupa a inceput sa scada pana la 40, iar apoi sa urce pana la 65 la sfarsit pe tot dataset ul (kung_fu in loc de doom) fara indiana jones cu urmatoarea configuratie:
+ENCODER_UNITS = 512
+ENCODER_UNITS_2 = 256
+ENCODER_UNITS_3 = 128
+LATENT_DIM = 64
+BETA = 0.01
+EPOCHS = 2001
+BARS = 1
+BATCH_SIZE = 32
+FS = 16
+NUM_INSTRUMENTS = 10
+MAX_INSTRUMENTS_PER_SONG = 1
+MAX_INSTRUMENTS_GENERATED = 3
+optimizer = keras.optimizers.Adam()
+
+8. F1 de >96 dupa 1600 epoci pe tot dataset ul (kung_fu in loc de doom) fara indiana jones cu urmatoarea configuratie:
+ENCODER_UNITS = 512
+ENCODER_UNITS_2 = 256
+ENCODER_UNITS_3 = 128
+LATENT_DIM = 64
+BETA = 0.01
+EPOCHS = 2001
+BARS = 1
+BATCH_SIZE = 32
+FS = 16
+NUM_INSTRUMENTS = 10
+MAX_INSTRUMENTS_PER_SONG = 1
+MAX_INSTRUMENTS_GENERATED = 3
+lr = 1.0
+optimizer = keras.optimizers.Adadelta(learning_rate=lr)
+
+9. F1 de >... dupa ... epoci pe tot dataset ul (kung_fu in loc de doom) fara indiana jones cu urmatoarea configuratie:
+ENCODER_UNITS = 512
+ENCODER_UNITS_2 = 256
+ENCODER_UNITS_3 = 128
+LATENT_DIM = 64
+BETA = frange_cycle_sigmoid
+EPOCHS = 2001
+BARS = 1
+BATCH_SIZE = 32
+FS = 16
+NUM_INSTRUMENTS = 10
+MAX_INSTRUMENTS_PER_SONG = 1
+MAX_INSTRUMENTS_GENERATED = 3
+lr = 1.0
+optimizer = keras.optimizers.Adadelta(learning_rate=lr)
+
+10. F1 de >... dupa ... epoci pe tot dataset ul (kung_fu in loc de doom) fara indiana jones cu urmatoarea configuratie:
+ENCODER_UNITS = 512
+ENCODER_UNITS_2 = 256
+ENCODER_UNITS_3 = 128
+LATENT_DIM = 64
+BETA = frange_cycle_cosine
+EPOCHS = 4001
+BARS = 1
+BATCH_SIZE = 32
+FS = 16
+NUM_INSTRUMENTS = 10
+MAX_INSTRUMENTS_PER_SONG = 1
+MAX_INSTRUMENTS_GENERATED = 3
+lr = 1.0
+optimizer = keras.optimizers.Adadelta(learning_rate=lr)
+
+11. F1 de >96 dupa 2500 epoci pe tot dataset ul (kung_fu in loc de doom) fara indiana jones cu urmatoarea configuratie:
+ENCODER_UNITS = 512
+ENCODER_UNITS_2 = 256
+ENCODER_UNITS_3 = 128
+LATENT_DIM = 64
+BETA = frange_cycle_cosine
+EPOCHS = 4001
+BARS = 1
+BATCH_SIZE = 32
+FS = 16
+NUM_INSTRUMENTS = 14
+MAX_INSTRUMENTS_PER_SONG = 2
+MAX_INSTRUMENTS_GENERATED = 3
+lr = 1.0
+optimizer = keras.optimizers.Adadelta(learning_rate=lr)
+
+
+
+
+
+
