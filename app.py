@@ -95,6 +95,12 @@ def train():
                                                                keras_optimizer=optimizer,
                                                                seq_len=seq_len, num_notes=num_notes)
 
+    saved_models = []
+    i = 0
+    for file in os.listdir("out/models/"):
+        saved_models.append({"value": i, "name": file})
+        i += 1
+
     return render_template('index.html', saved_models=saved_models, config=config, hidden_layers=hidden_layers)
 
 
@@ -122,6 +128,7 @@ def index():
         i = 0
         for file in os.listdir("out/models/"):
             saved_models.append({"value": i, "name": file})
+            i += 1
 
         return render_template('index.html', saved_models=saved_models, config=config, hidden_layers=hidden_layers)
 

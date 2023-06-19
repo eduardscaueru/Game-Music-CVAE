@@ -313,13 +313,17 @@ if __name__ == '__main__':
     plt.show()
 
     notes_instruments = sorted(list(notes_per_instrument.items()), key=lambda x: x[1], reverse=True)
-    notes_instruments = [(pretty_midi.program_to_instrument_name(x[0]).replace(" ", "\n"), x[1]) if x[0] != -1 else ("Drums", x[1])for x in notes_instruments]
+    # notes_instruments = [x for x in notes_instruments if x[0] in instrument_to_idx]
+    notes_instruments = [(pretty_midi.program_to_instrument_name(x[0]).replace(" ", "\n"), x[1])
+                         if x[0] != -1
+                         else ("Drums", x[1])
+                         for x in notes_instruments]
     print(notes_instruments)
 
     df = pd.DataFrame(notes_instruments, columns=['instrument', 'notes'])
     plt.figure(figsize=(25, 5))
     sns.barplot(data=df, x='instrument', y='notes')
-    plt.title("Instruments based on number of notes")
+    plt.title("Instruments based on number of notes (MAX_INSTRUMENTS_PER_SONG=2)")
     plt.show()
 
     # piece = pm.PrettyMIDI("data/arcade/blox/Mussorgsky - Promenade.mid")

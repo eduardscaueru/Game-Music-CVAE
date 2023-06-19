@@ -41,13 +41,16 @@ def stagger(data, time_steps):
     # print("Data shape after: ", np.asarray(data).shape)
 
     # Chop a sequence into measures
-    # for i in range(0, len(data), NOTES_PER_BAR):
-    #     dataX.append(data[i:i + time_steps, :])
-    #     dataY.append(data[i + 1:(i + time_steps + 1), :])
-    for i in range(0, data.shape[0], time_steps):
-        if i > data.shape[0] - time_steps:
-            break
-        dataX.append(data[i: i + time_steps, :])
+    if BARS > 1:
+        for i in range(0, len(data), NOTES_PER_BAR):
+            if data[i + 1:(i + time_steps + 1), :].shape[0] == time_steps:
+                dataX.append(data[i:i + time_steps, :])
+                dataY.append(data[i + 1:(i + time_steps + 1), :])
+    else:
+        for i in range(0, data.shape[0], time_steps):
+            if i > data.shape[0] - time_steps:
+                break
+            dataX.append(data[i: i + time_steps, :])
     return dataX, dataY
 
 

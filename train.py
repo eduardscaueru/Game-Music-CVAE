@@ -197,8 +197,8 @@ if __name__ == "__main__":
     print(np.version.version)
     instrument_to_idx = limit_instruments()
     data = load_all(styles, SEQ_LEN, instrument_to_idx)
-    model_name = "changelog_11"
-    cvae, _, _, bce_metric, f1_metric, kl_metric = train_model(data, [512, 256, 128, 64], name=model_name)
+    model_name = "changelog_12"
+    cvae, _, _, bce_metric, f1_metric, kl_metric = train_model(data, [512, 256, 256, 128], name=model_name)
     cvae.save('out/models/' + model_name)
 
     plt.plot(
