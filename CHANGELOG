@@ -171,6 +171,22 @@ lr = 1.0
 optimizer = keras.optimizers.Adadelta(learning_rate=lr)
 
 
+12. F1 de >45 dupa 3000 epoci pe tot dataset ul fara indiana jones cu urmatoarea configuratie:
+ENCODER_UNITS = 512
+ENCODER_UNITS_2 = 256
+ENCODER_UNITS_3 = 256
+LATENT_DIM = 128
+BETA = 0.01
+EPOCHS = 3001
+BARS = 1
+BATCH_SIZE = 32
+FS = 16
+NUM_INSTRUMENTS = 10
+MAX_INSTRUMENTS_PER_SONG = 1
+MAX_INSTRUMENTS_GENERATED = 3
+lr = 1.0
+optimizer = keras.optimizers.Adadelta(learning_rate=lr)
+
 
 
 
