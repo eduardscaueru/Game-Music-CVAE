@@ -178,7 +178,7 @@ ENCODER_UNITS_3 = 256
 LATENT_DIM = 128
 BETA = 0.01
 EPOCHS = 3001
-BARS = 1
+BARS = 2
 BATCH_SIZE = 32
 FS = 16
 NUM_INSTRUMENTS = 10
@@ -187,7 +187,36 @@ MAX_INSTRUMENTS_GENERATED = 3
 lr = 1.0
 optimizer = keras.optimizers.Adadelta(learning_rate=lr)
 
+13. F1 de >94 dupa 2400 epoci pe tot dataset ul nou cu urmatoarea configuratie:
+ENCODER_UNITS = 512
+ENCODER_UNITS_2 = 256
+ENCODER_UNITS_3 = 128
+LATENT_DIM = 64
+BETA = 0.01
+EPOCHS = 3001
+BARS = 1
+BATCH_SIZE = 32
+FS = 16
+NUM_INSTRUMENTS = 13
+MAX_INSTRUMENTS_PER_SONG = 2
+MAX_INSTRUMENTS_GENERATED = 3
+lr = 1.0
+optimizer = keras.optimizers.Adadelta(learning_rate=lr)
 
-
+14. F1 de >.. dupa ... epoci pe tot dataset ul nou cu urmatoarea configuratie:
+ENCODER_UNITS = 512
+ENCODER_UNITS_2 = 256
+ENCODER_UNITS_3 = 128
+LATENT_DIM = 64
+BETA = frange_cycle_sigmoid
+EPOCHS = 4001
+BARS = 1
+BATCH_SIZE = 32
+FS = 16
+NUM_INSTRUMENTS = 13
+MAX_INSTRUMENTS_PER_SONG = 2
+MAX_INSTRUMENTS_GENERATED = 3
+lr = 1.0
+optimizer = keras.optimizers.Adadelta(learning_rate=lr)
 
 
