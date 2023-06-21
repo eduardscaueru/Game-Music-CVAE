@@ -79,8 +79,8 @@ class CVAE(keras.Model):
         # encoder q(z|x,y)
         enc1_output = self.encoder_block(seq)
         # concat feature maps and one hot label vector
-        img_lbl_concat = tf.concat([enc1_output, labels], 1)
-        z_mu, z_rho = self.latent_block(img_lbl_concat)
+        style_lbl_concat = tf.concat([enc1_output, labels], 1)
+        z_mu, z_rho = self.latent_block(style_lbl_concat)
 
         z = sampling(z_mu, z_rho, self.batch_size, self.latent_dim)
 
