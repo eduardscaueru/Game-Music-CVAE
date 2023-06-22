@@ -219,4 +219,90 @@ MAX_INSTRUMENTS_GENERATED = 3
 lr = 1.0
 optimizer = keras.optimizers.Adadelta(learning_rate=lr)
 
+15. F1 de >25 dupa 3001 epoci pe tot dataset ul nou cu urmatoarea configuratie:
+ENCODER_UNITS = 512
+ENCODER_UNITS_2 = 256
+ENCODER_UNITS_3 = 128
+LATENT_DIM = 64
+BETA = 5.25 (1.86 (beta_norm) tot la fel)
+EPOCHS = 3001
+BARS = 1
+BATCH_SIZE = 32
+FS = 16
+NUM_INSTRUMENTS = 13
+MAX_INSTRUMENTS_PER_SONG = 2
+MAX_INSTRUMENTS_GENERATED = 3
+lr = 1.0
+optimizer = keras.optimizers.Adadelta(learning_rate=lr)
 
+17. F1 de >75 (de rulat cu mai multe epoci) dupa 4000 epoci pe urmatorul dataset augumentat cu urmatoarea configuratie:
+[256, 128, 64]
+LATENT_DIM = 32
+BETA = 1
+EPOCHS = 4000
+BARS = 1
+BATCH_SIZE = 64
+FS = 16
+NUM_INSTRUMENTS = 5
+MAX_INSTRUMENTS_PER_SONG = 1
+MAX_INSTRUMENTS_GENERATED = 3
+lr = 1.0
+optimizer = keras.optimizers.Adadelta(learning_rate=lr)
+metroid + burning_moneky genereaza bass nou spre exemplu
+styles = [
+    [
+        'data/action/kung_fu',
+        'data/action/metroid2',
+        'data/action/r-type'
+    ],
+    [
+        'data/adventure/blade_runner',
+        'data/adventure/castlevania2'
+        # 'data/adventure/myst'
+    ],
+    [
+        'data/arcade/blox',
+        'data/arcade/burning_monkey'
+        # 'data/arcade/mario'
+    ]
+    # [
+    #     'data/horror/blood',
+    #     'data/horror/house_of_the_dead'
+    # ]
+]
+
+18. F1 de >96 dupa 4000 epoci pe urmatorul dataset augumentat cu urmatoarea configuratie:
+[256, 128, 64]
+LATENT_DIM = 32
+BETA = cosine
+EPOCHS = 4000
+BARS = 1
+BATCH_SIZE = 64
+FS = 16
+NUM_INSTRUMENTS = 5
+MAX_INSTRUMENTS_PER_SONG = 1
+MAX_INSTRUMENTS_GENERATED = 3
+lr = 1.0
+optimizer = keras.optimizers.Adadelta(learning_rate=lr)
+metroid + burning_moneky genereaza bass nou spre exemplu
+styles = [
+    [
+        'data/action/kung_fu',
+        'data/action/metroid2',
+        'data/action/r-type'
+    ],
+    [
+        'data/adventure/blade_runner',
+        'data/adventure/castlevania2'
+        # 'data/adventure/myst'
+    ],
+    [
+        'data/arcade/blox',
+        'data/arcade/burning_monkey'
+        # 'data/arcade/mario'
+    ]
+    # [
+    #     'data/horror/blood',
+    #     'data/horror/house_of_the_dead'
+    # ]
+]
