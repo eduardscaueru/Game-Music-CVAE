@@ -1,12 +1,13 @@
 import datetime
 from schedulers import frange_cycle_sigmoid, frange_cycle_cosine, frange_cycle_linear
-from model import *
-from generate import generate, plot_latent_space
+from model_vae import *
+from generate import generate
 import pretty_midi as pm
 from dataset import load_all
 from keras import backend as K
 import matplotlib.pyplot as plt
 from midi_util import limit_instruments
+from util import visualize_latent_space
 from sklearn.utils import shuffle
 tf.get_logger().setLevel('ERROR')
 
@@ -56,7 +57,8 @@ def elbo(z_mu, z_rho, decoded_seqs, original_seqs):
     # bce = tf.reduce_mean(bce, axis=0)
     # # print(decoded[0, :5], original)
     # # print("After mean: ", bce)
-    bce_loss = tf.keras.losses.BinaryCrossentropy(reduction=tf.keras.losses.Reduction.SUM)
+    # bce_loss = tf.keras.losses.BinaryCrossentropy(reduction=tf.keras.losses.Reduction.SUM)
+    bce_loss = tf.keras.losses.BinaryCrossentropy()
     bce = bce_loss(tf.cast(original_seqs, decoded_seqs.dtype), decoded_seqs)
     # print("Bce: ", bce)
     # kl loss
@@ -80,16 +82,14 @@ def train_model(dataset, hidden_layers, latent_dim=LATENT_DIM, epochs=EPOCHS, ba
                 beta_strategy=BETA, learning_rate=1.0, keras_optimizer="adadelta",
                 seq_len=SEQ_LEN, num_notes=NUM_NOTES):
     note_data = dataset[0][0]
-    note_target = dataset[0][1]
     style_data = dataset[0][3]
     num_seqs = note_data.shape[0]
 
     note_data, style_data = shuffle(note_data, style_data, random_state=42)
     print("note shape", note_data.shape)
-    print("style shape", style_data.shape)
     # print("note_data between", len(note_data[0 < note_data < 1]))
 
-    cvae = CVAE(latent_dim, hidden_layers, batch_size=batch_size, seq_len=seq_len, num_notes=num_notes)
+    vae = VAE(latent_dim, hidden_layers, batch_size=batch_size, seq_len=seq_len, num_notes=num_notes)
 
     beta_scheduler = None
     if type(beta_strategy) == float:
@@ -97,11 +97,11 @@ def train_model(dataset, hidden_layers, latent_dim=LATENT_DIM, epochs=EPOCHS, ba
     elif beta_strategy == "sigmoid":
         print("ok sigmoid")
         beta_scheduler = frange_cycle_sigmoid(0.0, 1.0, epochs, 4, 1.0)
+        beta_scheduler = beta_scheduler + np.ones_like(beta_scheduler) * 1
+        beta_scheduler = beta_scheduler[::-1]
     elif beta_strategy == "cosine":
-        print("ok cosine")
         beta_scheduler = frange_cycle_cosine(0.0, 1.0, epochs, 4, 1.0)
     else:
-        print("ok linear")
         beta_scheduler = frange_cycle_linear(0.0, 1.0, epochs, 4, 1.0)
 
     optimizer = None
@@ -132,11 +132,10 @@ def train_model(dataset, hidden_layers, latent_dim=LATENT_DIM, epochs=EPOCHS, ba
         for start_batch in np.arange(0, num_seqs - num_seqs % batch_size, batch_size):
             with tf.GradientTape() as tape:
                 seqs = note_data[start_batch:start_batch + batch_size, :, :]
-                # target_seqs = note_target[start_batch:start_batch + BATCH_SIZE, :, :]
                 style_labels = style_data[start_batch:start_batch + batch_size, 1, :]
 
                 # forward pass
-                z_mu, z_rho, decoded_seqs = cvae(seqs, style_labels)
+                z_mu, z_rho, decoded_seqs = vae(seqs)
                 if epoch == epochs - 1:
                     print(decoded_seqs[0, 0, :])
 
@@ -148,10 +147,10 @@ def train_model(dataset, hidden_layers, latent_dim=LATENT_DIM, epochs=EPOCHS, ba
                 # compute F1 score
                 f1_score = f1_m(seqs, decoded_seqs)
 
-            gradients = tape.gradient(loss, cvae.variables)
-            # print(np.mean([tf.reduce_mean(g) for g in gradients]))
+            gradients = tape.gradient(loss, vae.variables)
+            print(np.mean([tf.reduce_mean(g) for g in gradients]))
 
-            optimizer.apply_gradients(zip(gradients, cvae.variables))
+            optimizer.apply_gradients(zip(gradients, vae.variables))
 
             kl_loss_tracker.update_state(beta * kl)
             bce_loss_tracker.update_state(bce)
@@ -168,6 +167,8 @@ def train_model(dataset, hidden_layers, latent_dim=LATENT_DIM, epochs=EPOCHS, ba
             else:
                 z_mu_list = np.concatenate((z_mu_list, z_mu), axis=0)
 
+        # visualize_latent_space(z_mu_list, label_list)
+
         # display metrics at the end of each epoch.
         epoch_kl, epoch_bce, epoch_f1 = kl_loss_tracker.result(), bce_loss_tracker.result(), f1_tracker.result()
         print(f'epoch: {epoch}, bce: {epoch_bce:.4f}, kl_div: {epoch_kl:.4f}, f1: {epoch_f1:.4f}')
@@ -181,18 +182,15 @@ def train_model(dataset, hidden_layers, latent_dim=LATENT_DIM, epochs=EPOCHS, ba
             tf.summary.scalar('epoch_f1', epoch_f1, step=optimizer.iterations)
 
         if epoch > 0 and epoch % generate_every_epoch == 0:
-            # save_generated_song(cvae, epoch, 4)
-            cvae.save('out/models/' + name + "_epoch_" + str(epoch))
-
-        if epoch % 10 == 0:
-            plot_latent_space(cvae, instrument_to_idx)
+            # save_generated_song(vae, epoch, 4)
+            vae.save('out/models/' + name + "_epoch_" + str(epoch))
 
         # reset metric states
         kl_loss_tracker.reset_state()
         bce_loss_tracker.reset_state()
         f1_tracker.reset_state()
 
-    return cvae, z_mu_list, label_list, bce_metric, f1_metric, kl_metric
+    return vae, z_mu_list, label_list, bce_metric, f1_metric, kl_metric
 
 
 if __name__ == "__main__":
@@ -200,9 +198,10 @@ if __name__ == "__main__":
     print(np.version.version)
     instrument_to_idx = limit_instruments()
     data = load_all(styles, SEQ_LEN, instrument_to_idx)
-    model_name = "changelog_20"
-    cvae, _, _, bce_metric, f1_metric, kl_metric = train_model(data, [512, 256, 128], name=model_name, beta_strategy="sigmoid")
-    cvae.save('out/models/' + model_name)
+    model_name = "changelog_17"
+    vae, _, _, bce_metric, f1_metric, kl_metric = train_model(data, [256, 128, 128, 64], name=model_name,
+                                                              keras_optimizer="adam", learning_rate=0.001)
+    vae.save('out/models/' + model_name)
 
     plt.plot(
         np.linspace(1, EPOCHS, EPOCHS),
