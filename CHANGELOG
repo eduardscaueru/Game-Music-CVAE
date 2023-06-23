@@ -209,7 +209,7 @@ ENCODER_UNITS_2 = 256
 ENCODER_UNITS_3 = 128
 LATENT_DIM = 64
 BETA = frange_cycle_sigmoid
-EPOCHS = 4001
+EPOCHS = 4001	
 BARS = 1
 BATCH_SIZE = 32
 FS = 16
@@ -306,3 +306,87 @@ styles = [
     #     'data/horror/house_of_the_dead'
     # ]
 ]
+
+20. F1 de >60 dupa 2000 epoci pe urmatorul dataset augumentat cu urmatoarea configuratie: (spatiu latent cu forme ca SVM (par separabile in spatiu mai mare)
+[256, 256, 128, 128]
+LATENT_DIM = 64
+BETA = 0.5
+EPOCHS = 2001
+BARS = 1
+BATCH_SIZE = 128
+FS = 8
+NUM_INSTRUMENTS = 5
+MAX_INSTRUMENTS_PER_SONG = 2
+MAX_INSTRUMENTS_GENERATED = 3
+lr = 1.0
+optimizer = keras.optimizers.Adadelta(learning_rate=lr)
+metroid + burning_moneky genereaza bass nou spre exemplu
+styles = [
+    [
+        'data/action/kung_fu',
+        'data/action/metroid2',
+        'data/action/r-type'
+    ],
+    [
+        'data/adventure/blade_runner',
+        'data/adventure/castlevania2'
+        # 'data/adventure/myst'
+    ],
+    [
+        'data/arcade/blox',
+        'data/arcade/burning_monkey'
+        # 'data/arcade/mario'
+    ]
+]
+
+
+21: F1 de >60 dupa 2000 epoci pe urmatorul dataset augumentat cu urmatoarea configuratie:
+256, 128, 128
+LATENT_DIM = 64
+BETA = 0.3 si 0.7 pentru MSE (https://medium.com/@outerrencedl/variational-autoencoder-and-a-bit-kl-divergence-with-pytorch-ce04fd55d0d7)
+EPOCHS = 2001
+BARS = 1
+BATCH_SIZE = 64
+FS = 16
+NUM_INSTRUMENTS = 6
+MAX_INSTRUMENTS_PER_SONG = 1
+MAX_INSTRUMENTS_GENERATED = 3
+lr = 1.0
+optimizer = keras.optimizers.Adadelta(learning_rate=lr)
+metroid + burning_moneky genereaza bass nou spre exemplu
+styles = [
+    [
+        'data/action'
+        # 'data/action/kung_fu',
+        # 'data/action/metroid2',
+        # 'data/action/r-type'
+    ],
+    [
+        'data/adventure'
+        # 'data/adventure/blade_runner',
+        # 'data/adventure/castlevania2'
+        # 'data/adventure/myst'
+    ],
+    [
+        'data/arcade'
+        # 'data/arcade/blox',
+        # 'data/arcade/burning_monkey'
+        # 'data/arcade/mario'
+    ],
+    [
+        'data/horror'
+        # 'data/horror/blood',
+        # 'data/horror/house_of_the_dead'
+    ]
+]
+Similarity
+generated_action_21_greedy vs Met_II = 0.5015625
+generated_action_21_greedy vs STANLevel_Intro = 0.49639205
+generated_action_21_greedy vs T_kungfu = 0.50326705
+generated_action_21_greedy vs r-type4 = 0.50139205
+generated_action_21_greedy vs r-typeL6 = 0.49903409
+
+
+
+
+
