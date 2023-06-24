@@ -235,7 +235,7 @@ MAX_INSTRUMENTS_GENERATED = 3
 lr = 1.0
 optimizer = keras.optimizers.Adadelta(learning_rate=lr)
 
-17. F1 de >75 (de rulat cu mai multe epoci) dupa 4000 epoci pe urmatorul dataset augumentat cu urmatoarea configuratie:
+17. F1 de >75 (de rulat cu mai multe epoci) dupa 4000 epoci pe urmatorul dataset augmentat cu urmatoarea configuratie:
 [256, 128, 64]
 LATENT_DIM = 32
 BETA = 1
@@ -386,6 +386,108 @@ generated_action_21_greedy vs T_kungfu = 0.50326705
 generated_action_21_greedy vs r-type4 = 0.50139205
 generated_action_21_greedy vs r-typeL6 = 0.49903409
 
+22.1: F1 de >37 dupa 1000 epoci pe urmatorul dataset augmentat cu urmatoarea configuratie:
+256, 128, 128
+LATENT_DIM = 64
+BETA = 1.0 nu minimizeaza kl
+EPOCHS = 2001
+BARS = 1
+BATCH_SIZE = 64
+FS = 16
+NUM_INSTRUMENTS = 5
+MAX_INSTRUMENTS_PER_SONG = 2
+MAX_INSTRUMENTS_GENERATED = 3
+lr = 1.0
+optimizer = keras.optimizers.Adadelta(learning_rate=lr)
+metroid + burning_moneky genereaza bass nou spre exemplu
+styles = [
+    [
+        'data/action'
+        # 'data/action/kung_fu',
+        # 'data/action/metroid2',
+        # 'data/action/r-type'
+    ],
+    [
+        'data/adventure'
+        # 'data/adventure/blade_runner',
+        # 'data/adventure/castlevania2'
+    ],
+    [
+        'data/arcade'
+        # 'data/arcade/blox',
+        # 'data/arcade/burning_monkey'
+    ]
+]
+rank order
+['/home/ediuso/Documents/Licenta/Game-Music-CVAE/out/generated_arcade_15_greedy.mid'
+ '/home/ediuso/Documents/Licenta/Game-Music-CVAE/out/generated_arcade_21_greedy.mid'
+ '/home/ediuso/Documents/Licenta/Game-Music-CVAE/out/generated_arcade_changelog_13_greedy.mid']
+
+22.2: F1 de >... dupa ... epoci pe urmatorul dataset augmentat cu urmatoarea configuratie:
+256, 128, 128
+LATENT_DIM = 64
+BETA = cosine [0,1]
+EPOCHS = 2001
+BARS = 1
+BATCH_SIZE = 64
+FS = 16
+NUM_INSTRUMENTS = 5
+MAX_INSTRUMENTS_PER_SONG = 2
+MAX_INSTRUMENTS_GENERATED = 3
+lr = 1.0
+optimizer = keras.optimizers.Adadelta(learning_rate=lr)
+metroid + burning_moneky genereaza bass nou spre exemplu
+styles = [
+    [
+        'data/action'
+        # 'data/action/kung_fu',
+        # 'data/action/metroid2',
+        # 'data/action/r-type'
+    ],
+    [
+        'data/adventure'
+        # 'data/adventure/blade_runner',
+        # 'data/adventure/castlevania2'
+    ],
+    [
+        'data/arcade'
+        # 'data/arcade/blox',
+        # 'data/arcade/burning_monkey'
+    ]
+]
+
+23: F1 de >... dupa ... epoci pe urmatorul dataset augmentat cu urmatoarea configuratie:
+256, 128, 128
+LATENT_DIM = 64
+BETA = cosine [0.5,1.5]
+EPOCHS = 2001
+BARS = 1
+BATCH_SIZE = 64
+FS = 16
+NUM_INSTRUMENTS = 5
+MAX_INSTRUMENTS_PER_SONG = 2
+MAX_INSTRUMENTS_GENERATED = 3
+lr = 1.0
+optimizer = keras.optimizers.Adadelta(learning_rate=lr)
+metroid + burning_moneky genereaza bass nou spre exemplu
+styles = [
+    [
+        'data/action'
+        # 'data/action/kung_fu',
+        # 'data/action/metroid2',
+        # 'data/action/r-type'
+    ],
+    [
+        'data/adventure'
+        # 'data/adventure/blade_runner',
+        # 'data/adventure/castlevania2'
+    ],
+    [
+        'data/arcade'
+        # 'data/arcade/blox',
+        # 'data/arcade/burning_monkey'
+    ]
+]
 
 
 
