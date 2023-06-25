@@ -131,9 +131,11 @@ def interpolate(cvae, instrument_to_idx, a, b, num_steps):
             game_label = game_labels[i, :]
             game_idx = np.argmax(game_label)
             if sample_a is None and a == game_idx:
+                print("game_idx a", game_idx)
                 sample_a = seqs[i, :, :]
                 genre_label = style_labels[i, :]
             if sample_b is None and b == game_idx:
+                print("game_idx b", game_idx)
                 sample_b = seqs[i, :, :]
                 genre_label = style_labels[i, :]
             if sample_a is not None and sample_b is not None:
@@ -142,19 +144,23 @@ def interpolate(cvae, instrument_to_idx, a, b, num_steps):
         if ok == 0:
             break
 
-    sample_a = tf.transpose(RepeatVector(BATCH_SIZE)(sample_a), perm=[1, 0, 2])
-    sample_b = tf.transpose(RepeatVector(BATCH_SIZE)(sample_b), perm=[1, 0, 2])
-    genre_label = np.tile(genre_label, (BATCH_SIZE, 1))
+    # sample_a = tf.transpose(RepeatVector(BATCH_SIZE)(sample_a), perm=[1, 0, 2])
+    # sample_b = tf.transpose(RepeatVector(BATCH_SIZE)(sample_b), perm=[1, 0, 2])
+    sample_a = tf.expand_dims(sample_a, axis=0)
+    sample_b = tf.expand_dims(sample_b, axis=0)
+    # genre_label = np.tile(genre_label, (BATCH_SIZE, 1))
+    genre_label = tf.expand_dims(genre_label, axis=0)
     print(sample_a.shape, sample_b.shape, genre_label.shape)
 
     z_a = cvae.encoder_block(sample_a)
     z_b = cvae.encoder_block(sample_b)
+
     z_a_lbl_concat = tf.concat([z_a, genre_label], 1)
     z_b_lbl_concat = tf.concat([z_b, genre_label], 1)
     z_mu_a, z_rho_a = cvae.latent_block(z_a_lbl_concat)
     z_mu_b, z_rho_b = cvae.latent_block(z_b_lbl_concat)
-    z_a = sampling(z_mu_a, z_rho_a, BATCH_SIZE, LATENT_DIM)
-    z_b = sampling(z_mu_b, z_rho_b, BATCH_SIZE, LATENT_DIM)
+    z_a = sampling(z_mu_a, z_rho_a, 1, LATENT_DIM)
+    z_b = sampling(z_mu_b, z_rho_b, 1, LATENT_DIM)
 
     z_a = z_a[0, :]
     z_b = z_b[0, :]
@@ -166,13 +172,10 @@ def interpolate(cvae, instrument_to_idx, a, b, num_steps):
         interpolations.append(z_a + step * diff)
     decoded_seqs = []
     for interpolation in interpolations:
-        print(interpolation.shape, genre_label.shape)
-        z_decoder = tf.concat([interpolation, genre_label[0, :]], 0)
-        z_decoder = np.tile(z_decoder, (BATCH_SIZE, 1))
-        print(z_decoder.shape)
+        interpolation = tf.expand_dims(interpolation, axis=0)
+        z_decoder = tf.concat([interpolation, genre_label], 1)
         decoded_seq = cvae.decoder_block(z_decoder)
         decoded_seqs.append(decoded_seq[0, :, :])
-        print(decoded_seq.shape)
 
     return decoded_seqs
 
@@ -265,21 +268,20 @@ if __name__ == "__main__":
     # plot_latent_space(model, instrument_to_idx)
     model.summary()
     model.decoder_block.summary()
-    print(idx_to_instrument)
-    # interpolated_seqs = interpolate(model, instrument_to_idx, 0, 1, 4)
-    # for i, interpolated_seq in enumerate(interpolated_seqs):
-    #     generated_seq = tf.expand_dims(interpolate(model, instrument_to_idx, 0, 1, 4)[0], axis=0)
-    #     print(np.max(generated_seq), generated_seq.shape)
-    #     selected_instruments = separate_instruments(generated_seq, idx_to_instrument, "GREEDY", threshold=1e-3)
-    #     pm_song = pm.PrettyMIDI()
-    #     for program, piano_roll in selected_instruments:
-    #         unclamped_piano_roll = unclamp_midi(piano_roll)
-    #         encoded = midi_encode_v2(unclamped_piano_roll, program=program)
-    #         pm_song.instruments.append(encoded.instruments[0])
-    #
-    #     f = open("out/generated_action_interpolated_0+1_greedy_" + str(i) + ".mid", "w")
-    #     f.close()
-    #     pm_song.write("out/generated_action_interpolated_0+1_greedy_" + str(i) + ".mid")
+    interpolated_seqs = interpolate(model, instrument_to_idx, 1, 2, 4)
+    for i, interpolated_seq in enumerate(interpolated_seqs):
+        generated_seq = tf.expand_dims(interpolated_seq, axis=0)
+        print(np.max(generated_seq), generated_seq.shape)
+        selected_instruments = separate_instruments(generated_seq, idx_to_instrument, "GREEDY", threshold=1e-3)
+        pm_song = pm.PrettyMIDI()
+        for program, piano_roll in selected_instruments:
+            unclamped_piano_roll = unclamp_midi(piano_roll)
+            encoded = midi_encode_v2(unclamped_piano_roll, program=program)
+            pm_song.instruments.append(encoded.instruments[0])
+
+        f = open("out/generated_action_interpolated_1+2_greedy_" + str(i) + ".mid", "w")
+        f.close()
+        pm_song.write("out/generated_action_interpolated_1+2_greedy_" + str(i) + ".mid")
     # label = np.zeros((1, NUM_STYLES))
     # label[:, 0] = 0.5
     # label[:, 5] = 0.5

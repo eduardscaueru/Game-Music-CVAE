@@ -523,9 +523,9 @@ styles = [
 ]
 
 
-Am incercat interpolare intre kung_fu si metroid si nu se adauga multa variatie. Cel mai bine se potriveste cu kung_fu
-0.5163636363636366 /home/ediuso/Documents/Licenta/Game-Music-CVAE/data/action/kung_fu/T_kungfu_2.mid
-
+Am incercat interpolare intre metroid si r-type pentru changelog 22 deoarece pe grafic erau apropiate clusterele.
+Interpolarea cu step ul 0 similaritate (ar trebui sa fie metroid): 0.5104545454545457 /home/ediuso/Documents/Licenta/Game-Music-CVAE/data/action/metroid2/STANLevel_Intro_-1.mid
+Interpolarea cu step ul 4, ultimul, similaritate (ar trebui sa fie r-type): 0.5140909090909095 /home/ediuso/Documents/Licenta/Game-Music-CVAE/data/action/r-type/r-typeL6_-1.mid
 
 
 
